@@ -1,80 +1,17 @@
 // api.ts - Universal Data Layer for Piklab
 // This file handles data interaction with the backend API.
 
-// ─── Types ───────────────────────────────────────────────────────────
-
-export interface SiteSettings {
-  heroTitle: string;
-  heroSubtitle: string;
-  heroDescription: string;
-  contactEmail: string;
-  contactPhone: string;
-  socialLinks: {
-    instagram?: string;
-    facebook?: string;
-    twitter?: string;
-    linkedin?: string;
-  };
-  logoUrl?: string;
-  address: string;
-}
-
-export interface PortfolioItem {
-  id: string;
-  title: string;
-  category: string;
-  type: 'image' | 'video' | 'link';
-  thumbnail: string;
-  url?: string;
-  description: string;
-}
-
-export interface Brand {
-  id: string;
-  name: string;
-  logoUrl?: string;
-  toneOfVoice?: string;
-  colors?: string[];
-}
-
-export interface Service {
-  id: string;
-  title: string;
-  slug: string;
-  description: string;
-  icon: string;
-  features: string[];
-  content?: string;
-}
-
-export interface Package {
-  id: string;
-  name: string;
-  price: string;
-  period: string;
-  features: string[];
-  highlighted?: boolean;
-}
-
-export interface Client {
-  id: string;
-  displayName: string;
-  email: string;
-}
-
-export interface Task {
-  id: string;
-  title: string;
-  description: string;
-  clientId: string;
-  status: 'brief' | 'designing' | 'review' | 'revision' | 'approved';
-  type: 'post' | 'story' | 'reels' | 'banner' | 'other';
-  createdAt: string;
-  assetUrl?: string;
-  managerNote?: string;
-  revisionNote?: string;
-  scheduledDate?: string;
-}
+import { 
+  SiteSettings, 
+  PortfolioItem, 
+  Brand, 
+  Service, 
+  Package, 
+  UserProfile as Client, 
+  Task, 
+  TaskComment, 
+  Reference 
+} from '../types';
 
 export interface Message {
   id: string;
@@ -83,15 +20,6 @@ export interface Message {
   message: string;
   date: string;
   read: boolean;
-}
-
-export interface TaskComment {
-  id: string;
-  taskId: string;
-  userId: string;
-  content: string;
-  createdAt: string;
-  pinCoordinates?: { x: number; y: number };
 }
 
 export interface CanvasPin {
