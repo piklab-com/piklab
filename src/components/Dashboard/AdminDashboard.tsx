@@ -8,8 +8,8 @@ import {
   MoreHorizontal, ChevronRight, BarChart3, MessageSquare,
   Calendar as CalendarIcon
 } from 'lucide-react';
-import { db, auth, handleFirestoreError, OperationType, logout } from '../../firebase';
-import { collection, query, onSnapshot, updateDoc, doc, addDoc, where } from 'firebase/firestore';
+import { useAuth } from '../../context/AuthContext';
+import { api } from '../../lib/api';
 import { Task, UserProfile, Brand } from '../../types';
 import { TaskDetailModal } from './TaskDetailModal';
 import { SmartCalendar } from './SmartCalendar';
@@ -30,10 +30,10 @@ const AdminDashboard = () => {
   const [brands, setBrands] = useState<Brand[]>([]);
   const [activeTab, setActiveTab] = useState<'overview' | 'tasks' | 'clients' | 'calendar' | 'settings' | 'cms'>('overview');
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
-  const [currentUser, setCurrentUser] = useState<UserProfile | null>(null);
+  const { profile: currentUser, logout } = useAuth();
   
   // CMS State
-  const { settings, updateSettings } = useSiteSettings();
+  const { settings } = useSiteSettings();
   const [cmsForm, setCmsForm] = useState<any>(settings || {});
   const [isSavingCms, setIsSavingCms] = useState(false);
 
@@ -44,46 +44,34 @@ const AdminDashboard = () => {
   }, [settings]);
 
   useEffect(() => {
-    if (!auth.currentUser) return;
-
-    const unsubscribeUser = onSnapshot(doc(db, 'users', auth.currentUser.uid), (doc) => {
-      if (doc.exists()) {
-        setCurrentUser({ uid: doc.id, ...doc.data() } as UserProfile);
+    const fetchData = async () => {
+      try {
+        const [tasksData, clientsData, brandsData] = await Promise.all([
+          api.getTasks(),
+          api.getClients(),
+          api.getBrands()
+        ]);
+        setTasks(tasksData);
+        setClients(clientsData as any);
+        setBrands(brandsData);
+      } catch (error) {
+        console.error('Error fetching dashboard data:', error);
       }
-    });
-
-    // Fetch Tasks
-    const unsubscribeTasks = onSnapshot(collection(db, 'tasks'), (snapshot) => {
-      setTasks(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Task)));
-    });
-
-    // Fetch Clients (and Designers for the modal)
-    const unsubscribeAllUsers = onSnapshot(collection(db, 'users'), (snapshot) => {
-      const users = snapshot.docs.map(doc => ({ uid: doc.id, ...doc.data() } as UserProfile));
-      setClients(users.filter(u => u.role === 'client'));
-    });
-
-    // Fetch Brands
-    const unsubscribeBrands = onSnapshot(collection(db, 'brands'), (snapshot) => {
-      setBrands(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Brand)));
-    });
-
-    return () => {
-      unsubscribeUser();
-      unsubscribeTasks();
-      unsubscribeAllUsers();
-      unsubscribeBrands();
     };
+
+    fetchData();
+    const interval = setInterval(fetchData, 30000);
+    return () => clearInterval(interval);
   }, []);
 
   const handleAssignDesigner = async (taskId: string, designerId: string) => {
     try {
-      await updateDoc(doc(db, 'tasks', taskId), { 
+      await api.updateTask(taskId, { 
         designerId,
         status: 'designing'
       });
     } catch (error) {
-      handleFirestoreError(error, OperationType.UPDATE, `tasks/${taskId}`);
+      console.error('Update task error:', error);
     }
   };
 
@@ -99,31 +87,27 @@ const AdminDashboard = () => {
     setTasks(prev => prev.map(t => t.id === draggableId ? { ...t, status: newStatus } : t));
 
     try {
-      const updates: Partial<Task> = {
+      await api.updateTask(draggableId, {
         status: newStatus,
         updatedAt: new Date().toISOString()
-      };
-
-      await updateDoc(doc(db, 'tasks', draggableId), updates);
+      });
     } catch (error) {
-      handleFirestoreError(error, OperationType.UPDATE, `tasks/${draggableId}`);
-      // Revert on error (simple reload)
-      window.location.reload();
+      console.error('Update task status error:', error);
     }
   };
 
   const handleUpdateTask = async (taskId: string, updates: any) => {
     try {
-      await updateDoc(doc(db, 'tasks', taskId), updates);
+      await api.updateTask(taskId, updates);
     } catch (error) {
-      handleFirestoreError(error, OperationType.UPDATE, `tasks/${taskId}`);
+      console.error('Update task error:', error);
     }
   };
 
   const handleSaveCms = async () => {
     setIsSavingCms(true);
     try {
-      await updateSettings(cmsForm);
+      await api.saveSettings(cmsForm);
       alert('Site ayarları başarıyla kaydedildi!');
     } catch (error) {
       alert('Kaydedilirken hata oluştu.');
@@ -164,26 +148,20 @@ const AdminDashboard = () => {
             active={activeTab === 'calendar'} 
             onClick={() => setActiveTab('calendar')} 
             icon={CalendarIcon} 
-            label="İçerik Takvimi" 
+            label="Takvim" 
           />
           <SidebarItem 
             active={activeTab === 'cms'} 
             onClick={() => setActiveTab('cms')} 
             icon={Settings} 
-            label="Site Ayarları (CMS)" 
-          />
-          <SidebarItem 
-            active={activeTab === 'settings'} 
-            onClick={() => setActiveTab('settings')} 
-            icon={Settings} 
-            label="Sistem Ayarları" 
+            label="İçerik Yönetimi" 
           />
         </nav>
 
         <div className="mt-auto">
           <button 
             onClick={logout}
-            className="w-full flex items-center gap-4 p-4 rounded-2xl font-bold text-red-500 hover:bg-red-50 smooth-transition"
+            className="flex items-center gap-4 p-4 w-full rounded-2xl font-bold text-gray-400 hover:bg-red-50 hover:text-red-600 smooth-transition"
           >
             <LogOut size={20} />
             Çıkış Yap
@@ -193,125 +171,119 @@ const AdminDashboard = () => {
 
       {/* Main Content */}
       <div className="flex-1 p-12 overflow-y-auto">
-        <header className="flex justify-between items-center mb-12">
-          <h1 className="text-4xl font-bold tracking-tight capitalize">{activeTab}</h1>
+        <div className="flex justify-between items-center mb-12">
+          <div>
+            <h1 className="text-4xl font-bold mb-2">Hoş Geldin, Admin</h1>
+            <p className="text-gray-500">İşte bugün Piklab'da olanlar.</p>
+          </div>
+          
           <div className="flex items-center gap-4">
             <div className="relative">
-              <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
+              <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" size={20} />
               <input 
                 type="text" 
                 placeholder="İş veya müşteri ara..." 
-                className="pl-12 pr-6 py-3 bg-white border border-gray-100 rounded-2xl outline-none focus:ring-2 focus:ring-primary smooth-transition w-64"
+                className="pl-12 pr-6 py-3 bg-white border border-gray-100 rounded-2xl outline-none focus:ring-2 focus:ring-primary/20 w-80 shadow-sm"
               />
             </div>
-            <div className="w-12 h-12 rounded-2xl bg-primary/10 flex items-center justify-center text-primary font-bold">A</div>
+            <button className="p-3 bg-white border border-gray-100 rounded-2xl shadow-sm text-gray-400 hover:text-primary smooth-transition">
+              <Settings size={24} />
+            </button>
           </div>
-        </header>
+        </div>
 
         {activeTab === 'overview' && (
-          <div className="space-y-12">
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
+          <>
+            <div className="grid grid-cols-4 gap-8 mb-12">
               <StatCard label="Aktif İşler" value={tasks.filter(t => t.status !== 'approved').length} icon={Clock} color="blue" />
-              <StatCard label="Onay Bekleyen" value={tasks.filter(t => t.status === 'review').length} icon={AlertCircle} color="yellow" />
+              <StatCard label="Onay Bekleyenler" value={tasks.filter(t => t.status === 'review').length} icon={AlertCircle} color="yellow" />
               <StatCard label="Tamamlanan" value={tasks.filter(t => t.status === 'approved').length} icon={CheckCircle} color="green" />
               <StatCard label="Toplam Müşteri" value={clients.length} icon={Users} color="purple" />
             </div>
 
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-              <div className="bg-white p-8 rounded-[40px] shadow-sm border border-gray-100">
-                <h3 className="text-xl font-bold mb-6">Son Talepler</h3>
-                <div className="space-y-4">
+            <div className="grid grid-cols-3 gap-8">
+              <div className="col-span-2 bg-white p-8 rounded-[40px] shadow-sm border border-gray-100">
+                <div className="flex justify-between items-center mb-8">
+                  <h3 className="text-xl font-bold">Son Aktiviteler</h3>
+                  <button className="text-primary font-bold text-sm">Tümünü Gör</button>
+                </div>
+                <div className="space-y-6">
                   {tasks.slice(0, 5).map(task => (
-                    <div key={task.id} className="flex items-center justify-between p-4 bg-accent rounded-2xl">
+                    <div key={task.id} className="flex items-center justify-between p-4 hover:bg-gray-50 rounded-2xl transition-colors cursor-pointer group" onClick={() => setSelectedTask(task)}>
                       <div className="flex items-center gap-4">
-                        <div className="w-10 h-10 rounded-xl bg-white flex items-center justify-center text-primary font-bold">
-                          {task.type[0].toUpperCase()}
+                        <div className="w-12 h-12 bg-accent rounded-xl flex items-center justify-center text-primary group-hover:bg-primary group-hover:text-white transition-colors">
+                          <FileText size={24} />
                         </div>
                         <div>
                           <p className="font-bold">{task.title}</p>
-                          <p className="text-xs text-gray-400">{task.status}</p>
+                          <p className="text-sm text-gray-400 font-medium">{clients.find(c => c.uid === task.clientId)?.displayName || 'Müşteri'}</p>
                         </div>
                       </div>
-                      <ChevronRight size={18} className="text-gray-300" />
+                      <div className="flex items-center gap-6">
+                        <div className="text-right">
+                          <p className="text-sm font-bold capitalize">{task.status}</p>
+                          <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest">{task.type}</p>
+                        </div>
+                        <ChevronRight className="text-gray-300" size={20} />
+                      </div>
                     </div>
                   ))}
                 </div>
               </div>
 
               <div className="bg-white p-8 rounded-[40px] shadow-sm border border-gray-100">
-                <h3 className="text-xl font-bold mb-6">Müşteri Memnuniyeti</h3>
-                <div className="flex items-center justify-center h-48">
-                   <div className="text-center">
-                     <p className="text-6xl font-bold text-primary">98%</p>
-                     <p className="text-gray-400 mt-2">NPS Skoru</p>
-                   </div>
+                <h3 className="text-xl font-bold mb-8">Performans Özeti</h3>
+                <div className="space-y-8">
+                  <div className="flex items-center gap-4">
+                    <div className="w-12 h-12 bg-blue-50 rounded-2xl flex items-center justify-center text-blue-600">
+                      <BarChart3 size={24} />
+                    </div>
+                    <div>
+                      <p className="text-xs text-gray-400 font-bold uppercase tracking-widest">Haftalık Artış</p>
+                      <p className="text-xl font-bold">+24%</p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-4">
+                    <div className="w-12 h-12 bg-purple-50 rounded-2xl flex items-center justify-center text-purple-600">
+                      <MessageSquare size={24} />
+                    </div>
+                    <div>
+                      <p className="text-xs text-gray-400 font-bold uppercase tracking-widest">Müşteri Memnuniyeti</p>
+                      <p className="text-xl font-bold">4.9/5</p>
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>
-          </div>
-        )}
-
-        {activeTab === 'clients' && (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {clients.map((client) => {
-              const clientBrand = brands.find(b => b.ownerId === client.uid);
-              const clientTasks = tasks.filter(t => t.clientId === client.uid);
-              return (
-                <div key={client.uid} className="bg-white p-8 rounded-[40px] shadow-sm border border-gray-100">
-                  <div className="flex items-center gap-4 mb-6">
-                    <div className="w-16 h-16 rounded-2xl bg-accent flex items-center justify-center text-primary font-bold text-2xl">
-                      {client.displayName?.[0] || 'C'}
-                    </div>
-                    <div>
-                      <h3 className="text-xl font-bold">{client.displayName}</h3>
-                      <p className="text-sm text-gray-400">{client.email}</p>
-                    </div>
-                  </div>
-                  
-                  <div className="grid grid-cols-2 gap-4 mb-6">
-                    <div className="bg-accent p-4 rounded-2xl">
-                      <p className="text-xs text-gray-400 font-bold uppercase mb-1">İşler</p>
-                      <p className="text-xl font-bold">{clientTasks.length}</p>
-                    </div>
-                    <div className="bg-accent p-4 rounded-2xl">
-                      <p className="text-xs text-gray-400 font-bold uppercase mb-1">Marka</p>
-                      <p className="text-sm font-bold truncate">{clientBrand?.name || 'Ayarlanmadı'}</p>
-                    </div>
-                  </div>
-
-                  <button className="w-full py-4 rounded-2xl border border-gray-100 font-bold hover:bg-accent smooth-transition">
-                    Detayları Görüntüle
-                  </button>
-                </div>
-              );
-            })}
-          </div>
+          </>
         )}
 
         {activeTab === 'tasks' && (
-          <div className="h-full flex flex-col">
+          <div className="bg-white p-8 rounded-[40px] shadow-sm border border-gray-100 min-h-[600px]">
             <DragDropContext onDragEnd={onDragEnd}>
-              <div className="flex gap-6 overflow-x-auto pb-4 h-full">
+              <div className="flex gap-6 h-full overflow-x-auto pb-4">
                 {COLUMNS.map(column => {
                   const columnTasks = tasks.filter(t => t.status === column.id);
                   return (
-                    <div key={column.id} className="flex-shrink-0 w-80 bg-gray-100/50 rounded-[32px] p-4 flex flex-col">
-                      <div className="flex items-center justify-between mb-4 px-2">
-                        <h3 className="font-bold text-gray-700">{column.title}</h3>
-                        <span className="bg-white text-gray-500 text-xs font-bold px-2 py-1 rounded-full shadow-sm">
-                          {columnTasks.length}
-                        </span>
+                    <div key={column.id} className="flex-shrink-0 w-80 bg-gray-50/50 rounded-3xl p-4">
+                      <div className="flex items-center justify-between mb-6 px-2">
+                        <div className="flex items-center gap-2">
+                          <h3 className="font-bold text-gray-700">{column.title}</h3>
+                          <span className="bg-white text-gray-400 text-[10px] font-bold px-2 py-0.5 rounded-full border border-gray-100 shadow-sm">
+                            {columnTasks.length}
+                          </span>
+                        </div>
+                        <button className="text-gray-300 hover:text-primary transition-colors"><Plus size={18} /></button>
                       </div>
-                      
+
                       <Droppable droppableId={column.id}>
                         {(provided, snapshot) => (
                           <div 
-                            ref={provided.innerRef} 
-                            {...provided.droppableProps}
-                            className={`flex-1 min-h-[200px] rounded-2xl transition-colors ${snapshot.isDraggingOver ? 'bg-gray-200/50' : ''}`}
+                            {...provided.droppableProps} 
+                            ref={provided.innerRef}
+                            className={`min-h-[500px] transition-colors rounded-2xl ${snapshot.isDraggingOver ? 'bg-primary/5' : ''}`}
                           >
                             {columnTasks.map((task, index) => (
-                              // @ts-ignore
                               <Draggable key={task.id} draggableId={task.id!} index={index}>
                                 {(provided, snapshot) => (
                                   <div
@@ -372,7 +344,7 @@ const AdminDashboard = () => {
         {activeTab === 'calendar' && (
           <SmartCalendar 
             tasks={tasks} 
-            brand={brands[0] || {}} 
+            brand={brands[0] || {} as any} 
             onUpdateTask={handleUpdateTask} 
           />
         )}
@@ -481,4 +453,3 @@ const StatCard = ({ label, value, icon: Icon, color }: any) => {
 };
 
 export default AdminDashboard;
-
