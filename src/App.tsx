@@ -27,7 +27,7 @@ const DashboardRouter = () => {
 
   useEffect(() => {
     if (user) {
-      const alreadyOnboarded = localStorage.getItem('piklab_onboarded');
+      const alreadyOnboarded = localStorage.getItem('teras_onboarded');
       if (!alreadyOnboarded) {
         setShowOnboarding(true);
       }
