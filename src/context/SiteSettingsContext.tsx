@@ -24,7 +24,7 @@ export const SiteSettingsProvider: React.FC<{ children: React.ReactNode }> = ({ 
 
     // Listen for changes from other tabs (like Admin Panel)
     const handleStorageChange = (e: StorageEvent) => {
-      if (e.key === 'piklab_settings') {
+      if (e.key === 'teras_settings') {
         load();
       }
     };
