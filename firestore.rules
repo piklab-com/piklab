@@ -1,0 +1,148 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // ===============================================================
+    // Assumed Data Model
+    // ===============================================================
+    //
+    // Collection: users
+    // Fields: uid, email, displayName, role, brandId, createdAt
+    //
+    // Collection: brands
+    // Fields: name, ownerId, colors, fonts, toneOfVoice, competitors, logoUrl
+    //
+    // Collection: tasks
+    // Fields: title, description, brandId, clientId, designerId, status, type, scheduledDate, assetUrl, thumbnailUrl, feedback, createdAt
+    //
+    // Collection: subscriptions
+    // Fields: userId, planId, status, currentPeriodEnd
+    //
+    // ===============================================================
+
+    // ===============================================================
+    // Helper Functions
+    // ===============================================================
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+    
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+    
+    function isAdmin() {
+      return isAuthenticated() && (
+        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin' || 
+        (request.auth.token.email == "farukstore56@gmail.com" && request.auth.token.email_verified == true)
+      );
+    }
+    
+    function isDesigner() {
+      return isAuthenticated() && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'designer';
+    }
+
+    function isClient() {
+      return isAuthenticated() && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'client';
+    }
+
+    function isValidEmail(email) {
+      return email is string && email.matches("^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$");
+    }
+
+    function hasOnlyAllowedFields(fields) {
+      return request.resource.data.keys().hasOnly(fields);
+    }
+
+    // ===============================================================
+    // Domain Validators
+    // ===============================================================
+
+    function isValidUser(data) {
+      return data.uid is string && 
+             data.email is string && isValidEmail(data.email) &&
+             data.role in ['admin', 'client', 'designer'];
+    }
+
+    function isValidBrand(data) {
+      return data.name is string && data.name.size() > 0 && data.name.size() < 100 &&
+             data.ownerId is string;
+    }
+
+    function isValidTask(data) {
+      return data.title is string && data.title.size() > 0 && data.title.size() < 200 &&
+             data.brandId is string &&
+             data.status in ['brief', 'designing', 'review', 'revision', 'approved'];
+    }
+
+    // ===============================================================
+    // Rules
+    // ===============================================================
+
+    match /users/{uid} {
+      allow read: if isAuthenticated();
+      allow create: if isAuthenticated() && isOwner(uid) && isValidUser(request.resource.data);
+      allow update: if isAuthenticated() && (isOwner(uid) || isAdmin()) && isValidUser(request.resource.data);
+    }
+
+    match /brands/{brandId} {
+      allow read: if isAuthenticated() && (resource.data.ownerId == request.auth.uid || isAdmin() || isDesigner());
+      allow create: if isAuthenticated() && (request.resource.data.ownerId == request.auth.uid || isAdmin()) && isValidBrand(request.resource.data);
+      allow update: if isAuthenticated() && (resource.data.ownerId == request.auth.uid || isAdmin()) && isValidBrand(request.resource.data);
+    }
+
+    match /tasks/{taskId} {
+      allow read: if isAuthenticated() && (
+        resource.data.clientId == request.auth.uid || 
+        resource.data.designerId == request.auth.uid || 
+        isAdmin()
+      );
+      allow create: if isAuthenticated() && (isClient() || isAdmin()) && isValidTask(request.resource.data);
+      allow update: if isAuthenticated() && (
+        resource.data.clientId == request.auth.uid || 
+        resource.data.designerId == request.auth.uid || 
+        isAdmin()
+      ) && isValidTask(request.resource.data);
+      allow delete: if isAdmin();
+      
+      match /comments/{commentId} {
+        allow read: if isAuthenticated() && (
+          get(/databases/$(database)/documents/tasks/$(taskId)).data.clientId == request.auth.uid || 
+          get(/databases/$(database)/documents/tasks/$(taskId)).data.designerId == request.auth.uid || 
+          isAdmin()
+        );
+        allow create: if isAuthenticated() && (
+          get(/databases/$(database)/documents/tasks/$(taskId)).data.clientId == request.auth.uid || 
+          get(/databases/$(database)/documents/tasks/$(taskId)).data.designerId == request.auth.uid || 
+          isAdmin()
+        ) && request.resource.data.userId == request.auth.uid;
+        allow update, delete: if isAuthenticated() && resource.data.userId == request.auth.uid;
+      }
+    }
+
+    match /subscriptions/{subId} {
+      allow read: if isAuthenticated() && (resource.data.userId == request.auth.uid || isAdmin());
+      allow write: if isAdmin();
+    }
+
+    match /portfolio/{id} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    match /packages/{id} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    match /references_logos/{id} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    match /services/{id} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+  }
+}

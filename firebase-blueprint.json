@@ -1,0 +1,106 @@
+{
+  "entities": {
+    "UserProfile": {
+      "title": "User Profile",
+      "description": "Extended user data for Piklab users",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string" },
+        "email": { "type": "string", "format": "email" },
+        "displayName": { "type": "string" },
+        "role": { "type": "string", "enum": ["admin", "client", "designer"] },
+        "brandId": { "type": "string", "description": "Reference to the brand for clients" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["uid", "email", "role"]
+    },
+    "Brand": {
+      "title": "Brand DNA",
+      "description": "Brand identity and guidelines",
+      "type": "object",
+      "properties": {
+        "name": { "type": "string" },
+        "ownerId": { "type": "string" },
+        "colors": { "type": "array", "items": { "type": "string" } },
+        "fonts": { "type": "array", "items": { "type": "string" } },
+        "toneOfVoice": { "type": "string" },
+        "competitors": { "type": "array", "items": { "type": "string" } },
+        "logoUrl": { "type": "string" }
+      },
+      "required": ["name", "ownerId"]
+    },
+    "Task": {
+      "title": "Design Task",
+      "description": "Individual design or video task",
+      "type": "object",
+      "properties": {
+        "title": { "type": "string" },
+        "description": { "type": "string" },
+        "brandId": { "type": "string" },
+        "clientId": { "type": "string" },
+        "designerId": { "type": "string" },
+        "status": { "type": "string", "enum": ["brief", "designing", "review", "revision", "approved"] },
+        "type": { "type": "string", "enum": ["post", "story", "reels", "banner", "other"] },
+        "scheduledDate": { "type": "string", "format": "date-time" },
+        "assetUrl": { "type": "string" },
+        "thumbnailUrl": { "type": "string" },
+        "feedback": { "type": "array", "items": { "type": "object" } },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["title", "brandId", "status"]
+    },
+    "TaskComment": {
+      "title": "Task Comment",
+      "description": "Comment on a specific task",
+      "type": "object",
+      "properties": {
+        "taskId": { "type": "string" },
+        "userId": { "type": "string" },
+        "content": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "pinCoordinates": {
+          "type": "object",
+          "properties": {
+            "x": { "type": "number" },
+            "y": { "type": "number" }
+          }
+        }
+      },
+      "required": ["taskId", "userId", "content", "createdAt"]
+    },
+    "Subscription": {
+      "title": "Subscription",
+      "description": "User subscription details",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "planId": { "type": "string" },
+        "status": { "type": "string", "enum": ["active", "past_due", "canceled"] },
+        "currentPeriodEnd": { "type": "string", "format": "date-time" }
+      },
+      "required": ["userId", "planId", "status"]
+    }
+  },
+  "firestore": {
+    "/users/{uid}": {
+      "schema": "UserProfile",
+      "description": "User profiles"
+    },
+    "/brands/{brandId}": {
+      "schema": "Brand",
+      "description": "Brand DNA data"
+    },
+    "/tasks/{taskId}": {
+      "schema": "Task",
+      "description": "Design and video tasks"
+    },
+    "/tasks/{taskId}/comments/{commentId}": {
+      "schema": "TaskComment",
+      "description": "Comments and feedback on tasks"
+    },
+    "/subscriptions/{subId}": {
+      "schema": "Subscription",
+      "description": "User subscriptions"
+    }
+  }
+}
