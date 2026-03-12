@@ -1,47 +1,34 @@
 import React, { useState, useEffect } from 'react';
 import { motion } from 'motion/react';
-import {
-  LayoutDashboard, FileText, Image as ImageIcon,
-  Users, Settings, LogOut, Plus, Trash2,
-  Globe, Package, Tag, Save, Edit2, X, CheckCircle
+import { 
+  LayoutDashboard, Globe, FileText, ImageIcon, 
+  Tag, Package, Users, LogOut, Plus, 
+  Trash2, Save, Edit2, CheckCircle, 
+  TrendingUp, Activity, Search
 } from 'lucide-react';
-import {
-  api, SiteSettings, PortfolioItem, Brand, Service, Package as Pkg
+import { 
+  api, SiteSettings, PortfolioItem, Brand, Service, Package as Pkg 
 } from './lib/api';
 
-// ─── Auth ─────────────────────────────────────────────────────────────
-
 const AdminPanel = () => {
-  const [token, setToken] = useState<string | null>(localStorage.getItem('piklab_token'));
   const [activeTab, setActiveTab] = useState('dashboard');
+  const [token, setToken] = useState(localStorage.getItem('piklab_token'));
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [saved, setSaved] = useState(false);
 
-  const handleLogin = async (e: React.FormEvent) => {
+  const handleLogin = (e: React.FormEvent) => {
     e.preventDefault();
-    setError('');
+    // Offline / Standalone mode: simpler login
+    // In a real standalone, this would call /api/auth/login
     if (username === 'admin' && password === 'admin123') {
-      const devToken = 'dev-admin-token-' + Date.now();
-      localStorage.setItem('piklab_token', devToken);
-      setToken(devToken);
-      return;
+      const t = 'fake-jwt-token';
+      localStorage.setItem('piklab_token', t);
+      setToken(t);
+    } else {
+      setError('Hatalı kullanıcı adı veya şifre');
     }
-    try {
-      const res = await fetch('/api/auth/login', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ username, password })
-      });
-      if (res.ok) {
-        const data = await res.json();
-        localStorage.setItem('piklab_token', data.token);
-        setToken(data.token);
-        return;
-      }
-    } catch { /* ignore */ }
-    setError('Hatalı kullanıcı adı veya şifre');
   };
 
   const showSavedFeedback = () => {
@@ -114,7 +101,7 @@ const AdminPanel = () => {
 const LoginScreen = ({ username, setUsername, password, setPassword, error, onLogin }: any) => (
   <div className="min-h-screen bg-[#F8F9FA] flex items-center justify-center p-6">
     <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }}
-      className="bg-white p-10 rounded-[40px] shadow-2xl w-full max-w-md">
+      className="bg-white p-10 rounded-[40px] shadow-2xl w-full max-md">
       <div className="text-center mb-10">
         <div className="w-16 h-16 bg-primary rounded-2xl mx-auto flex items-center justify-center text-white font-bold text-3xl mb-4">P</div>
         <h1 className="text-3xl font-bold">Piklab Admin</h1>
@@ -198,37 +185,28 @@ const SettingsTab = ({ onSave }: { onSave: () => void }) => {
   if (!form) return <div className="p-10 text-center text-gray-400">Yükleniyor...</div>;
 
   return (
-    <div className="max-w-3xl space-y-8">
-      <div className="flex justify-between items-center">
-        <div>
-          <h1 className="text-4xl font-bold mb-1">Site Ayarları</h1>
-          <p className="text-gray-400">Ana sayfadaki metinleri ve iletişim bilgilerini düzenleyin</p>
-        </div>
-        <button onClick={save} className="px-6 py-3 bg-primary text-white rounded-2xl font-bold hover:bg-primary/90 smooth-transition flex items-center gap-2 shadow-lg shadow-primary/20">
-          <Save size={18} /> Kaydet
-        </button>
+    <div className="max-w-4xl space-y-6">
+      <div className="flex justify-between items-center mb-4">
+        <div><h1 className="text-4xl font-bold">Site Ayarları</h1><p className="text-gray-400">Genel bilgiler ve iletişim detayları</p></div>
+        <button onClick={save} className="bg-primary text-white px-8 py-3 rounded-2xl font-bold flex items-center gap-2 hover:bg-primary/90 smooth-transition"><Save size={18} /> Kaydet</button>
       </div>
-
-      <Card title="Hero Alanı (Ana Sayfa Üst Kısım)">
-        <Field label="Ana Başlık" value={form.heroTitle} onChange={v => set('heroTitle', v)} placeholder="YENİ NESİL REKLAMCILIK AJANSI" />
-        <Field label="Alt Başlık / Slogan" value={form.heroSubtitle} onChange={v => set('heroSubtitle', v)} placeholder="EN İYİLER İÇİN EN İYİSİ." />
-        <Field label="Açıklama Metni" value={form.heroDescription} onChange={v => set('heroDescription', v)} multiline placeholder="Kısa açıklama..." />
-        <Field label="Logo URL (boşsa varsayılan logo)" value={form.logoUrl} onChange={v => set('logoUrl', v)} placeholder="https://..." />
-      </Card>
-
-      <Card title="İletişim Bilgileri">
-        <div className="grid grid-cols-2 gap-4">
-          <Field label="Telefon" value={form.contactPhone} onChange={v => set('contactPhone', v)} placeholder="+90 555 000 00 00" />
-          <Field label="E-Posta" value={form.contactEmail} onChange={v => set('contactEmail', v)} placeholder="info@piklab.com" />
+      <Card title="Görsel Ayarlar">
+        <div className="grid grid-cols-2 gap-6">
+          <Field label="Logo URL" value={form.logoUrl} onChange={v => set('logoUrl', v)} placeholder="https://..." />
+          <div className="text-xs text-gray-400 p-4">Site logosu burada düzenlenir.</div>
         </div>
-        <Field label="Adres" value={form.address || ''} onChange={v => set('address', v)} placeholder="İstanbul, Türkiye" />
       </Card>
-
-      <Card title="Sosyal Medya Linkleri">
-        <div className="grid grid-cols-2 gap-4">
-          <Field label="Instagram" value={form.socialLinks.instagram || ''} onChange={v => setForm(f => ({ ...f, socialLinks: { ...f.socialLinks, instagram: v } }))} placeholder="https://instagram.com/..." />
-          <Field label="Facebook" value={form.socialLinks.facebook || ''} onChange={v => setForm(f => ({ ...f, socialLinks: { ...f.socialLinks, facebook: v } }))} placeholder="https://facebook.com/..." />
-          <Field label="Twitter / X" value={form.socialLinks.twitter || ''} onChange={v => setForm(f => ({ ...f, socialLinks: { ...f.socialLinks, twitter: v } }))} placeholder="https://twitter.com/..." />
+      <Card title="Metin İçerikleri">
+        <Field label="Hero Başlığı" value={form.heroTitle} onChange={v => set('heroTitle', v)} />
+        <Field label="Hero Alt Metni" value={form.heroSubtitle} onChange={v => set('heroSubtitle', v)} multiline />
+      </Card>
+      <Card title="İletişim Bilgileri">
+        <div className="grid grid-cols-2 gap-6">
+          <Field label="E-mail" value={form.contactEmail} onChange={v => set('contactEmail', v)} />
+          <Field label="Telefon" value={form.contactPhone} onChange={v => set('contactPhone', v)} />
+          <div className="col-span-2">
+            <Field label="Adres" value={form.address} onChange={v => set('address', v)} multiline />
+          </div>
         </div>
       </Card>
     </div>
@@ -247,7 +225,7 @@ const ServicesTab = ({ onSave }: { onSave: () => void }) => {
   useEffect(() => { refresh(); }, []);
 
   const save = async (service: Service) => {
-    await api.updateService(service.slug || service.id, service);
+    await api.updateService(service.slug || service.id.toString(), service);
     setEditing(null);
     await refresh();
     onSave();
@@ -255,23 +233,30 @@ const ServicesTab = ({ onSave }: { onSave: () => void }) => {
 
   const add = async () => {
     if (!form.title.trim()) return;
-    await api.addService({ ...form, slug: form.title.toLowerCase().replace(/[^a-z0-9]+/g, '-'), features: form.features.split('\n').filter(Boolean) });
+    await api.addService({ 
+      ...form, 
+      slug: form.title.toLowerCase().replace(/[^a-z0-9]+/g, '-'), 
+      features: form.features.split('\n').filter(Boolean),
+      content: ''
+    });
     setForm({ title: '', description: '', icon: '⭐', features: '' });
     setShowAdd(false);
     await refresh();
     onSave();
   };
 
-  const del = async (id: string, slug?: string) => {
-    await api.deleteService(slug || id);
-    await refresh();
-    onSave();
+  const del = async (id: string | number, slug?: string) => {
+    if (window.confirm('Bu hizmeti silmek istediğinize emin misiniz?')) {
+      await api.deleteService(slug || id.toString());
+      await refresh();
+      onSave();
+    }
   };
 
   return (
-    <div className="max-w-4xl space-y-6">
+    <div className="max-w-5xl space-y-6">
       <div className="flex justify-between items-center">
-        <div><h1 className="text-4xl font-bold mb-1">Hizmetler</h1><p className="text-gray-400">{services.length} hizmet</p></div>
+        <div><h1 className="text-4xl font-bold mb-1">Hizmetler</h1><p className="text-gray-400">{services.length} aktif hizmet</p></div>
         <button onClick={() => setShowAdd(!showAdd)} className="px-6 py-3 bg-primary text-white rounded-2xl font-bold hover:bg-primary/90 smooth-transition flex items-center gap-2 shadow-lg shadow-primary/20">
           <Plus size={18} /> Yeni Hizmet
         </button>
@@ -404,7 +389,7 @@ const PortfolioTab = ({ onSave }: { onSave: () => void }) => {
                 <p className="font-bold">{item.title}</p>
                 <p className="text-xs text-gray-400">{item.type}</p>
               </div>
-              <button onClick={() => del(item.id)} className="p-2 text-gray-300 hover:text-red-500 hover:bg-red-50 rounded-xl smooth-transition"><Trash2 size={16} /></button>
+              <button onClick={() => del(item.id.toString())} className="p-2 text-gray-300 hover:text-red-500 hover:bg-red-50 rounded-xl smooth-transition"><Trash2 size={16} /></button>
             </div>
           </div>
         ))}
@@ -425,7 +410,15 @@ const BrandsTab = ({ onSave }: { onSave: () => void }) => {
 
   const add = async () => {
     if (!name.trim()) return;
-    await api.addBrand({ name, logoUrl });
+    await api.addBrand({ 
+      name, 
+      logoUrl, 
+      toneOfVoice: '', 
+      colors: [], 
+      ownerId: 'admin', 
+      fonts: [], 
+      competitors: [] 
+    });
     setName(''); setLogoUrl('');
     await refresh(); onSave();
   };
@@ -440,27 +433,19 @@ const BrandsTab = ({ onSave }: { onSave: () => void }) => {
       <Card title="Yeni Marka Ekle">
         <div className="grid grid-cols-2 gap-4">
           <Field label="Marka Adı" value={name} onChange={setName} placeholder="Örn: Nike" />
-          <Field label="Logo URL (isteğe bağlı)" value={logoUrl} onChange={setLogoUrl} placeholder="https://..." />
+          <Field label="Logo URL" value={logoUrl} onChange={setLogoUrl} placeholder="https://..." />
         </div>
-        <button onClick={add} className="mt-3 px-6 py-3 bg-primary text-white rounded-2xl font-bold hover:bg-primary/90 smooth-transition flex items-center gap-2 w-fit">
-          <Plus size={18} /> Marka Ekle
-        </button>
+        <button onClick={add} className="mt-4 px-8 py-3 bg-primary text-white rounded-2xl font-bold hover:bg-primary/90 smooth-transition shadow-lg shadow-primary/20">Ekle</button>
       </Card>
 
-      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-        {brands.map(b => (
-          <div key={b.id} className="bg-white rounded-[20px] p-4 border border-gray-100 shadow-sm flex items-center justify-between gap-3">
-            <div className="flex items-center gap-3">
-              {b.logoUrl ? (
-                <img src={b.logoUrl} alt={b.name} className="w-10 h-10 object-contain rounded-lg bg-gray-50" />
-              ) : (
-                <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center text-primary font-bold text-lg">
-                  {b.name.charAt(0)}
-                </div>
-              )}
-              <span className="font-bold text-sm">{b.name}</span>
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-6">
+        {brands.map(brand => (
+          <div key={brand.id} className="bg-white p-6 rounded-[28px] border border-gray-100 shadow-sm relative group">
+            <button onClick={() => del(brand.id)} className="absolute top-2 right-2 p-2 text-gray-300 hover:text-red-500 hover:bg-red-50 rounded-lg opacity-0 group-hover:opacity-100 smooth-transition"><Trash2 size={14} /></button>
+            <div className="aspect-square bg-gray-50 rounded-2xl flex items-center justify-center p-4 mb-4">
+              <img src={brand.logoUrl} alt={brand.name} className="max-w-full max-h-full object-contain grayscale group-hover:grayscale-0 smooth-transition" />
             </div>
-            <button onClick={() => del(b.id)} className="p-1.5 text-gray-300 hover:text-red-500 hover:bg-red-50 rounded-lg smooth-transition flex-shrink-0"><Trash2 size={14} /></button>
+            <p className="font-bold text-center truncate">{brand.name}</p>
           </div>
         ))}
       </div>
@@ -480,7 +465,7 @@ const PackagesTab = ({ onSave }: { onSave: () => void }) => {
   useEffect(() => { refresh(); }, []);
 
   const save = async (pkg: Pkg) => {
-    await api.updatePackage(pkg.id, pkg);
+    await api.updatePackage(pkg.id.toString(), pkg);
     setEditing(null); await refresh(); onSave();
   };
 
@@ -491,7 +476,7 @@ const PackagesTab = ({ onSave }: { onSave: () => void }) => {
     setShowAdd(false); await refresh(); onSave();
   };
 
-  const del = async (id: string) => { await api.deletePackage(id); await refresh(); onSave(); };
+  const del = async (id: string | number) => { await api.deletePackage(id.toString()); await refresh(); onSave(); };
 
   return (
     <div className="max-w-4xl space-y-6">
