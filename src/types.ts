@@ -8,6 +8,7 @@ export interface TaskComment {
 }
 
 export interface UserProfile {
+  id?: string;
   uid: string;
   email: string;
   displayName: string;
@@ -55,6 +56,7 @@ export interface Task {
   }[];
   createdAt: string;
   updatedAt?: string;
+  managerNote?: string;
 }
 
 export interface Subscription {
@@ -73,7 +75,7 @@ export interface Service {
   description: string;
   icon: string;
   features: string[];
-  content: string;
+  content?: string;
 }
 
 export interface PortfolioItem {
@@ -129,4 +131,7 @@ export interface SiteSettings {
   };
   logoUrl?: string;
   address: string;
+  aboutText?: string;
+  visionText?: string;
+  satisfactionRate?: number;
 }
