@@ -32,7 +32,7 @@ if (!admin.apps.length) {
   try {
     const adminConfig: admin.AppOptions = {};
     
-    // Explicitly set project ID if available to help Firestore auto-detection
+    // Explicitly set project ID if available
     if (firebaseConfig.projectId) {
       adminConfig.projectId = firebaseConfig.projectId;
       if (!process.env.GCLOUD_PROJECT) {
@@ -40,15 +40,28 @@ if (!admin.apps.length) {
       }
     }
 
-    // Try to use ADC, but don't fail if it's missing on non-GCP hosts
-    try {
-      adminConfig.credential = admin.credential.applicationDefault();
-    } catch (e) {
-      console.warn('No GOOGLE_APPLICATION_CREDENTIALS found. Project ID:', adminConfig.projectId);
+    // Try to use Service Account JSON from env var first (Best for Railway/Heroku)
+    if (process.env.FIREBASE_SERVICE_ACCOUNT) {
+      try {
+        const serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT);
+        adminConfig.credential = admin.credential.cert(serviceAccount);
+        console.log('Firebase Admin initialized with FIREBASE_SERVICE_ACCOUNT env var');
+      } catch (e) {
+        console.error('Error parsing FIREBASE_SERVICE_ACCOUNT env var:', e);
+      }
+    } 
+    
+    // Fallback to ADC if no cert provided
+    if (!adminConfig.credential) {
+      try {
+        adminConfig.credential = admin.credential.applicationDefault();
+        console.log('Firebase Admin initialized with applicationDefault');
+      } catch (e) {
+        console.warn('No credentials found. Firestore operations might fail. Project ID:', adminConfig.projectId);
+      }
     }
 
     admin.initializeApp(adminConfig);
-    console.log('Firebase Admin initialized.');
   } catch (error) {
     console.error('Firebase Admin initialization error:', error);
   }
