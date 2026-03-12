@@ -110,6 +110,25 @@ class LocalDB {
     this.load();
     return this.data.settings || {};
   }
+
+  backup() {
+    try {
+      const backupDir = path.join(__dirname, 'data', 'backups');
+      if (!fs.existsSync(backupDir)) fs.mkdirSync(backupDir, { recursive: true });
+      const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+      const backupPath = path.join(backupDir, `db-backup-${timestamp}.json`);
+      fs.copyFileSync(DB_PATH, backupPath);
+      console.log(`✅ Database backed up to ${backupPath}`);
+      
+      // Keep only last 5 backups
+      const files = fs.readdirSync(backupDir).sort().reverse();
+      if (files.length > 5) {
+        files.slice(5).forEach(f => fs.unlinkSync(path.join(backupDir, f)));
+      }
+    } catch (e) {
+      console.error('Backup Error:', e);
+    }
+  }
 }
 
 const db = new LocalDB();
@@ -259,10 +278,45 @@ async function startServer() {
     res.json({ count: items.length, items: items.map((i: any) => ({ id: i.id, title: i.title })) });
   });
 
-  // Settings
+  // Settings (Full CMS)
   app.get('/api/settings', (req, res) => res.json(db.getSettings()));
   app.post('/api/settings', authenticateToken, (req, res) => {
     db.setSettings(req.body.settings);
+    db.backup(); // Backup on important change
+    res.sendStatus(200);
+  });
+
+  // User Management (Admin Only)
+  app.get('/api/users', authenticateToken, (req, res) => {
+    if ((req as any).user?.role !== 'admin') return res.sendStatus(403);
+    const users = db.get('users').map((u: any) => {
+      const { password, ...safeUser } = u;
+      return safeUser;
+    });
+    res.json(users);
+  });
+
+  app.post('/api/users', authenticateToken, (req, res) => {
+    if ((req as any).user?.role !== 'admin') return res.sendStatus(403);
+    const { password, ...userData } = req.body;
+    const hashedPassword = bcrypt.hashSync(password, 10);
+    const newUser = db.add('users', { ...userData, password: hashedPassword });
+    res.status(201).json(newUser);
+  });
+
+  app.put('/api/users/:uid', authenticateToken, (req, res) => {
+    if ((req as any).user?.role !== 'admin') return res.sendStatus(403);
+    const { password, ...userData } = req.body;
+    if (password) {
+      userData.password = bcrypt.hashSync(password, 10);
+    }
+    db.update('users', req.params.uid, userData);
+    res.sendStatus(200);
+  });
+
+  app.delete('/api/users/:uid', authenticateToken, (req, res) => {
+    if ((req as any).user?.role !== 'admin') return res.sendStatus(403);
+    db.delete('users', req.params.uid);
     res.sendStatus(200);
   });
 
@@ -280,6 +334,36 @@ async function startServer() {
 
   // Packages
   app.get('/api/packages', (req, res) => res.json(db.get('packages')));
+
+  // Backups
+  app.post('/api/backup', authenticateToken, (req, res) => {
+    if ((req as any).user?.role !== 'admin') return res.sendStatus(403);
+    db.backup();
+    res.sendStatus(200);
+  });
+
+  // Manual File Upload (Base64 Fallback as multer is unavailable)
+  const UPLOADS_DIR = path.join(__dirname, 'uploads');
+  if (!fs.existsSync(UPLOADS_DIR)) fs.mkdirSync(UPLOADS_DIR, { recursive: true });
+  app.use('/uploads', express.static(UPLOADS_DIR));
+
+  app.post('/api/upload', authenticateToken, (req: any, res: any) => {
+    const { name, data } = req.body;
+    if (!name || !data) return res.status(400).json({ message: 'Missing file data' });
+    
+    try {
+      const base64Data = data.replace(/^data:.*?;base64,/, "");
+      const buffer = Buffer.from(base64Data, 'base64');
+      const ext = path.extname(name);
+      const fileName = `${Date.now()}-${Math.random().toString(36).substr(2, 5)}${ext}`;
+      const filePath = path.join(UPLOADS_DIR, fileName);
+      
+      fs.writeFileSync(filePath, buffer);
+      res.json({ url: `/uploads/${fileName}` });
+    } catch (e) {
+      res.status(500).json({ message: 'Upload failed' });
+    }
+  });
 
   app.use((err: any, req: any, res: any, next: any) => {
     console.error('Server Error:', err);
@@ -301,7 +385,7 @@ async function startServer() {
   const HOST = '0.0.0.0';
 
   app.listen(PORT, HOST, () => {
-    console.log(`✅ Server running on http://${HOST}:${PORT} (Local DB mode)`);
+    console.log(`✅ Server running on http://${HOST}:${PORT} (Local DB + Base64 Upload mode)`);
   });
 }
 
