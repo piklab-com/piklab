@@ -28,8 +28,9 @@ const AdminDashboard = () => {
   const [tasks, setTasks] = useState<Task[]>([]);
   const [clients, setClients] = useState<UserProfile[]>([]);
   const [brands, setBrands] = useState<Brand[]>([]);
-  const [activeTab, setActiveTab] = useState<'overview' | 'tasks' | 'clients' | 'calendar' | 'settings' | 'cms'>('overview');
+  const [activeTab, setActiveTab] = useState<'overview' | 'tasks' | 'clients' | 'calendar' | 'settings' | 'cms' | 'users'>('overview');
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
+  const [activeUsers, setActiveUsers] = useState<UserProfile[]>([]);
   const { profile: currentUser, logout } = useAuth();
   
   // CMS State
@@ -46,14 +47,16 @@ const AdminDashboard = () => {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const [tasksData, clientsData, brandsData] = await Promise.all([
+        const [tasksData, clientsData, brandsData, usersData] = await Promise.all([
           api.getTasks(),
           api.getClients(),
-          api.getBrands()
+          api.getBrands(),
+          api.getUsers()
         ]);
         setTasks(tasksData);
         setClients(clientsData as any);
         setBrands(brandsData);
+        setActiveUsers(usersData);
       } catch (error) {
         console.error('Error fetching dashboard data:', error);
       }
@@ -63,6 +66,16 @@ const AdminDashboard = () => {
     const interval = setInterval(fetchData, 30000);
     return () => clearInterval(interval);
   }, []);
+
+  const handleDeleteUser = async (uid: string) => {
+    if (!confirm('Bu kullanıcıyı silmek istediğinize emin misiniz?')) return;
+    try {
+      await api.deleteUser(uid);
+      setActiveUsers(prev => prev.filter(u => u.uid !== uid));
+    } catch (error) {
+      alert('Kullanıcı silinemedi.');
+    }
+  };
 
   const handleAssignDesigner = async (taskId: string, designerId: string) => {
     try {
@@ -151,10 +164,29 @@ const AdminDashboard = () => {
             label="Takvim" 
           />
           <SidebarItem 
+            active={activeTab === 'users'} 
+            onClick={() => setActiveTab('users')} 
+            icon={Users} 
+            label="Kullanıcı Yönetimi" 
+          />
+          <SidebarItem 
             active={activeTab === 'cms'} 
             onClick={() => setActiveTab('cms')} 
             icon={Settings} 
             label="İçerik Yönetimi" 
+          />
+          <SidebarItem 
+            active={false} 
+            onClick={async () => {
+              try {
+                await api.triggerBackup();
+                alert('Yedek başarıyla oluşturuldu!');
+              } catch {
+                alert('Yedekleme hatası!');
+              }
+            }} 
+            icon={Clock} 
+            label="Veri Yedekle" 
           />
         </nav>
 
@@ -185,6 +217,30 @@ const AdminDashboard = () => {
                 placeholder="İş veya müşteri ara..." 
                 className="pl-12 pr-6 py-3 bg-white border border-gray-100 rounded-2xl outline-none focus:ring-2 focus:ring-primary/20 w-80 shadow-sm"
               />
+            </div>
+            <div className="relative">
+              <input 
+                type="file" 
+                id="sidebar-upload" 
+                className="hidden" 
+                onChange={async (e) => {
+                  const file = e.target.files?.[0];
+                  if (file) {
+                    try {
+                      const res = await api.uploadFile(file);
+                      alert(`Dosya yüklendi: ${res.url}`);
+                    } catch {
+                      alert('Yükleme hatası!');
+                    }
+                  }
+                }}
+              />
+              <button 
+                onClick={() => document.getElementById('sidebar-upload')?.click()}
+                className="p-3 bg-white border border-gray-100 rounded-2xl shadow-sm text-gray-400 hover:text-primary smooth-transition flex items-center gap-2"
+              >
+                <Plus size={20} /> <span className="text-xs font-bold">Dosya Yükle</span>
+              </button>
             </div>
             <button className="p-3 bg-white border border-gray-100 rounded-2xl shadow-sm text-gray-400 hover:text-primary smooth-transition">
               <Settings size={24} />
@@ -349,13 +405,43 @@ const AdminDashboard = () => {
           />
         )}
 
+        {activeTab === 'users' && (
+          <div className="bg-white p-8 rounded-[40px] shadow-sm border border-gray-100">
+            <div className="flex justify-between items-center mb-8">
+              <h2 className="text-2xl font-bold">Kullanıcı Yönetimi</h2>
+              <button className="px-6 py-3 bg-primary text-white rounded-xl font-bold hover:bg-primary/90 smooth-transition flex items-center gap-2">
+                <Plus size={20} /> Yeni Kullanıcı Ekle
+              </button>
+            </div>
+            <div className="space-y-4">
+              {activeUsers.map(user => (
+                <div key={user.uid} className="flex items-center justify-between p-6 bg-gray-50 rounded-2xl">
+                  <div className="flex items-center gap-4">
+                    <div className="w-12 h-12 bg-white rounded-xl flex items-center justify-center font-bold text-primary border border-gray-100 italic">
+                      {user.displayName?.[0] || 'U'}
+                    </div>
+                    <div>
+                      <p className="font-bold text-lg">{user.displayName}</p>
+                      <p className="text-sm text-gray-500">{user.role.toUpperCase()}</p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-4">
+                    <button className="px-4 py-2 text-sm font-bold text-primary hover:bg-white rounded-lg smooth-transition">Düzenle</button>
+                    <button onClick={() => handleDeleteUser(user.uid)} className="px-4 py-2 text-sm font-bold text-red-500 hover:bg-red-50 rounded-lg smooth-transition">Sil</button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
         {activeTab === 'cms' && (
-          <div className="max-w-4xl mx-auto space-y-8">
+          <div className="max-w-4xl mx-auto space-y-8 pb-12">
             <div className="bg-white p-8 rounded-[40px] shadow-sm border border-gray-100">
               <div className="flex items-center justify-between mb-8">
                 <div>
                   <h2 className="text-2xl font-bold">İçerik Yönetim Sistemi (CMS)</h2>
-                  <p className="text-gray-500">Sitenizin ana sayfa metinlerini ve global ayarlarını buradan düzenleyin.</p>
+                  <p className="text-gray-500">Sitenizin tüm metinlerini ve iletişim ayarlarını buradan düzenleyin.</p>
                 </div>
                 <button 
                   onClick={handleSaveCms}
@@ -367,42 +453,97 @@ const AdminDashboard = () => {
                 </button>
               </div>
 
-              <div className="space-y-6">
-                <div>
-                  <h3 className="text-lg font-bold mb-4 text-primary">Ana Sayfa Hero Alanı</h3>
-                  <div className="space-y-4">
-                    <div>
-                      <label className="block text-sm font-bold text-gray-700 mb-2">Ana Başlık</label>
-                      <input 
-                        type="text" 
-                        value={cmsForm.heroTitle || ''}
-                        onChange={(e) => setCmsForm({ ...cmsForm, heroTitle: e.target.value })}
-                        className="w-full p-4 bg-gray-50 border border-gray-200 rounded-2xl outline-none focus:ring-2 focus:ring-primary"
-                        placeholder="Örn: YENİ NESİL REKLAMCILIK AJANSI"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-bold text-gray-700 mb-2">Alt Başlık (Slogan)</label>
-                      <input 
-                        type="text" 
-                        value={cmsForm.heroSubtitle || ''}
-                        onChange={(e) => setCmsForm({ ...cmsForm, heroSubtitle: e.target.value })}
-                        className="w-full p-4 bg-gray-50 border border-gray-200 rounded-2xl outline-none focus:ring-2 focus:ring-primary"
-                        placeholder="Örn: EN İYİLER İÇİN EN İYİSİ."
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-bold text-gray-700 mb-2">Açıklama Metni</label>
-                      <textarea 
-                        value={cmsForm.heroDescription || ''}
-                        onChange={(e) => setCmsForm({ ...cmsForm, heroDescription: e.target.value })}
-                        rows={3}
-                        className="w-full p-4 bg-gray-50 border border-gray-200 rounded-2xl outline-none focus:ring-2 focus:ring-primary resize-none"
-                        placeholder="Örn: Yeni nesil reklamcılık için çıktığımız bu yolda..."
-                      />
-                    </div>
+              <div className="space-y-12">
+                {/* Hero section */}
+                <section>
+                  <h3 className="text-lg font-bold mb-6 flex items-center gap-2 text-primary">
+                    <div className="w-2 h-6 bg-primary rounded-full"></div>
+                    Ana Sayfa Hero Alanı
+                  </h3>
+                  <div className="grid grid-cols-1 gap-4">
+                    <CmsInput 
+                      label="Ana Başlık" 
+                      value={cmsForm.heroTitle} 
+                      onChange={(v) => setCmsForm({...cmsForm, heroTitle: v})} 
+                    />
+                    <CmsInput 
+                      label="Alt Başlık (Slogan)" 
+                      value={cmsForm.heroSubtitle} 
+                      onChange={(v) => setCmsForm({...cmsForm, heroSubtitle: v})} 
+                    />
+                    <CmsTextarea 
+                      label="Açıklama Metni" 
+                      value={cmsForm.heroDescription} 
+                      onChange={(v) => setCmsForm({...cmsForm, heroDescription: v})} 
+                    />
                   </div>
-                </div>
+                </section>
+
+                {/* About section */}
+                <section>
+                  <h3 className="text-lg font-bold mb-6 flex items-center gap-2 text-primary">
+                    <div className="w-2 h-6 bg-primary rounded-full"></div>
+                    Hakkımızda & Vizyon
+                  </h3>
+                  <div className="grid grid-cols-1 gap-4">
+                    <CmsTextarea 
+                      label="Hakkımızda Metni" 
+                      value={cmsForm.aboutText} 
+                      onChange={(v) => setCmsForm({...cmsForm, aboutText: v})} 
+                    />
+                    <CmsTextarea 
+                      label="Vizyonumuz" 
+                      value={cmsForm.visionText} 
+                      onChange={(v) => setCmsForm({...cmsForm, visionText: v})} 
+                    />
+                  </div>
+                </section>
+
+                {/* Contact info */}
+                <section>
+                  <h3 className="text-lg font-bold mb-6 flex items-center gap-2 text-primary">
+                    <div className="w-2 h-6 bg-primary rounded-full"></div>
+                    İletişim Bilgileri
+                  </h3>
+                  <div className="grid grid-cols-2 gap-4">
+                    <CmsInput 
+                      label="E-Posta" 
+                      value={cmsForm.contactEmail} 
+                      onChange={(v) => setCmsForm({...cmsForm, contactEmail: v})} 
+                    />
+                    <CmsInput 
+                      label="Telefon" 
+                      value={cmsForm.contactPhone} 
+                      onChange={(v) => setCmsForm({...cmsForm, contactPhone: v})} 
+                    />
+                    <CmsInput 
+                      label="Adres" 
+                      className="col-span-2"
+                      value={cmsForm.address} 
+                      onChange={(v) => setCmsForm({...cmsForm, address: v})} 
+                    />
+                  </div>
+                </section>
+
+                {/* Social links */}
+                <section>
+                  <h3 className="text-lg font-bold mb-6 flex items-center gap-2 text-primary">
+                    <div className="w-2 h-6 bg-primary rounded-full"></div>
+                    Sosyal Medya Linkleri
+                  </h3>
+                  <div className="grid grid-cols-2 gap-4">
+                    <CmsInput 
+                      label="Instagram" 
+                      value={cmsForm.socialLinks?.instagram} 
+                      onChange={(v) => setCmsForm({...cmsForm, socialLinks: {...cmsForm.socialLinks, instagram: v}})} 
+                    />
+                    <CmsInput 
+                      label="Facebook" 
+                      value={cmsForm.socialLinks?.facebook} 
+                      onChange={(v) => setCmsForm({...cmsForm, socialLinks: {...cmsForm.socialLinks, facebook: v}})} 
+                    />
+                  </div>
+                </section>
               </div>
             </div>
           </div>
@@ -451,5 +592,29 @@ const StatCard = ({ label, value, icon: Icon, color }: any) => {
     </div>
   );
 };
+
+const CmsInput = ({ label, value, onChange, className = '' }: any) => (
+  <div className={className}>
+    <label className="block text-sm font-bold text-gray-700 mb-2">{label}</label>
+    <input 
+      type="text" 
+      value={value || ''}
+      onChange={(e) => onChange(e.target.value)}
+      className="w-full p-4 bg-gray-50 border border-gray-200 rounded-2xl outline-none focus:ring-2 focus:ring-primary smooth-transition"
+    />
+  </div>
+);
+
+const CmsTextarea = ({ label, value, onChange, className = '' }: any) => (
+  <div className={className}>
+    <label className="block text-sm font-bold text-gray-700 mb-2">{label}</label>
+    <textarea 
+      rows={4}
+      value={value || ''}
+      onChange={(e) => onChange(e.target.value)}
+      className="w-full p-4 bg-gray-50 border border-gray-200 rounded-2xl outline-none focus:ring-2 focus:ring-primary resize-none smooth-transition"
+    />
+  </div>
+);
 
 export default AdminDashboard;
