@@ -3,7 +3,6 @@ import { motion, AnimatePresence } from 'motion/react';
 import { Menu, X, LogIn, LayoutDashboard, Instagram, Linkedin, Facebook, Mail, Phone, MapPin, Moon, Sun } from 'lucide-react';
 import { Link, Outlet, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
-import { loginWithGoogle, logout } from '../../firebase';
 
 // ── Dark Mode Hook ──────────────────────────────────────────────────
 const useDarkMode = () => {
@@ -23,7 +22,7 @@ const useDarkMode = () => {
 const Navbar = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
-  const { user } = useAuth();
+  const { user, logout: authLogout } = useAuth();
   const location = useLocation();
   const navigate = useNavigate();
   const { dark, toggle } = useDarkMode();
@@ -80,7 +79,7 @@ const Navbar = () => {
                 <LayoutDashboard size={18} /> Panelim
               </button>
               <button
-                onClick={logout}
+                onClick={() => authLogout()}
                 className="text-sm font-bold text-gray-500 hover:text-red-600 uppercase tracking-wider smooth-transition"
               >
                 Çıkış
@@ -88,7 +87,7 @@ const Navbar = () => {
             </div>
           ) : (
             <button
-              onClick={loginWithGoogle}
+              onClick={() => navigate('/login')}
               className="brutal-btn text-sm py-2 px-6 flex items-center gap-2"
             >
               <LogIn size={18} /> Giriş Yap
@@ -133,7 +132,7 @@ const Navbar = () => {
             {user ? (
               <button onClick={() => { setIsOpen(false); navigate('/dashboard'); }} className="brutal-btn w-full">Panelim</button>
             ) : (
-              <button onClick={() => { setIsOpen(false); loginWithGoogle(); }} className="brutal-btn w-full">Giriş Yap</button>
+              <button onClick={() => { setIsOpen(false); navigate('/login'); }} className="brutal-btn w-full">Giriş Yap</button>
             )}
           </motion.div>
         )}
