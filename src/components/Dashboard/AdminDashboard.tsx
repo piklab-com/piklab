@@ -6,7 +6,7 @@ import {
   Settings, LogOut, Plus, Search,
   CheckCircle, Clock, AlertCircle,
   MoreHorizontal, ChevronRight, BarChart3, MessageSquare,
-  Calendar as CalendarIcon
+  Calendar as CalendarIcon, Folder, CreditCard, TrendingUp
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { api } from '../../lib/api';
@@ -28,7 +28,10 @@ const AdminDashboard = () => {
   const [tasks, setTasks] = useState<Task[]>([]);
   const [clients, setClients] = useState<UserProfile[]>([]);
   const [brands, setBrands] = useState<Brand[]>([]);
-  const [activeTab, setActiveTab] = useState<'overview' | 'tasks' | 'clients' | 'calendar' | 'settings' | 'cms' | 'users'>('overview');
+  const [activeTab, setActiveTab] = useState<'overview' | 'tasks' | 'clients' | 'calendar' | 'settings' | 'cms' | 'users' | 'projects' | 'invoices' | 'reports'>('overview');
+  const [projects, setProjects] = useState<any[]>([]);
+  const [invoices, setInvoices] = useState<any[]>([]);
+  const [reports, setReports] = useState<any>({});
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
   const [activeUsers, setActiveUsers] = useState<UserProfile[]>([]);
   const { profile: currentUser, logout } = useAuth();
@@ -47,16 +50,22 @@ const AdminDashboard = () => {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const [tasksData, clientsData, brandsData, usersData] = await Promise.all([
+        const [tasksData, clientsData, brandsData, usersData, projectsData, invoicesData, reportsData] = await Promise.all([
           api.getTasks(),
           api.getClients(),
           api.getBrands(),
-          api.getUsers()
+          api.getUsers(),
+          api.getProjects(),
+          api.getInvoices(),
+          api.getReports(),
         ]);
         setTasks(tasksData);
         setClients(clientsData as any);
         setBrands(brandsData);
         setActiveUsers(usersData);
+        setProjects(projectsData);
+        setInvoices(invoicesData);
+        setReports(reportsData || {});
       } catch (error) {
         console.error('Error fetching dashboard data:', error);
       }
@@ -169,24 +178,14 @@ const AdminDashboard = () => {
             icon={Users} 
             label="Kullanıcı Yönetimi" 
           />
+          <SidebarItem active={activeTab === 'projects'} onClick={() => setActiveTab('projects')} icon={Folder} label="Projeler" />
+          <SidebarItem active={activeTab === 'invoices'} onClick={() => setActiveTab('invoices')} icon={CreditCard} label="Faturalar" />
+          <SidebarItem active={activeTab === 'reports'} onClick={() => setActiveTab('reports')} icon={TrendingUp} label="Raporlama" />
           <SidebarItem 
             active={activeTab === 'cms'} 
             onClick={() => setActiveTab('cms')} 
             icon={Settings} 
             label="İçerik Yönetimi" 
-          />
-          <SidebarItem 
-            active={false} 
-            onClick={async () => {
-              try {
-                await api.triggerBackup();
-                alert('Yedek başarıyla oluşturuldu!');
-              } catch {
-                alert('Yedekleme hatası!');
-              }
-            }} 
-            icon={Clock} 
-            label="Veri Yedekle" 
           />
         </nav>
 
@@ -394,6 +393,128 @@ const AdminDashboard = () => {
                 })}
               </div>
             </DragDropContext>
+          </div>
+        )}
+
+        {activeTab === 'projects' && (
+          <div className="bg-white p-8 rounded-[40px] shadow-sm border border-gray-100">
+            <div className="flex justify-between items-center mb-8">
+              <h2 className="text-2xl font-bold">Proje Yönetimi</h2>
+            </div>
+            <div className="space-y-4">
+              {projects.map((proj: any) => {
+                const statusMap: Record<string,string> = { onboarding:'bg-blue-100 text-blue-700', production:'bg-purple-100 text-purple-700', review:'bg-yellow-100 text-yellow-700', done:'bg-green-100 text-green-700' };
+                const labelMap: Record<string,string> = { onboarding:'Başlatılıyor', production:'Üretimde', review:'İncelemede', done:'Tamamlandı' };
+                return (
+                  <div key={proj.id} className="flex items-center justify-between p-6 bg-gray-50 rounded-2xl">
+                    <div className="flex items-center gap-4">
+                      <div className="w-12 h-12 bg-white rounded-xl flex items-center justify-center text-primary border border-gray-100">
+                        <Folder size={24} />
+                      </div>
+                      <div>
+                        <p className="font-bold text-lg">{proj.title}</p>
+                        <p className="text-sm text-gray-500">{proj.client_name || proj.client_id} · {proj.service_type}</p>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-4">
+                      <span className={`text-xs font-bold px-3 py-1 rounded-full ${statusMap[proj.status]||'bg-gray-100 text-gray-600'}`}>{labelMap[proj.status]||proj.status}</span>
+                      <select
+                        value={proj.status}
+                        onChange={async (e) => { await api.updateProject(proj.id,{status:e.target.value}); const p=await api.getProjects(); setProjects(p); }}
+                        className="text-sm border border-gray-200 rounded-xl px-3 py-2 outline-none focus:ring-2 focus:ring-primary"
+                      >
+                        <option value="onboarding">Başlatılıyor</option>
+                        <option value="production">Üretimde</option>
+                        <option value="review">İncelemede</option>
+                        <option value="done">Tamamlandı</option>
+                      </select>
+                    </div>
+                  </div>
+                );
+              })}
+              {projects.length === 0 && <p className="text-center text-gray-400 py-12">Henüz proje yok.</p>}
+            </div>
+          </div>
+        )}
+
+        {activeTab === 'invoices' && (
+          <div className="bg-white p-8 rounded-[40px] shadow-sm border border-gray-100">
+            <div className="flex justify-between items-center mb-8">
+              <h2 className="text-2xl font-bold">Fatura Yönetimi</h2>
+            </div>
+            <div className="overflow-x-auto">
+              <table className="w-full">
+                <thead className="bg-gray-50 text-gray-500 text-xs font-black uppercase tracking-widest">
+                  <tr>
+                    <th className="px-6 py-4 text-left">Müşteri</th>
+                    <th className="px-6 py-4 text-left">Fatura</th>
+                    <th className="px-6 py-4 text-left">Tutar</th>
+                    <th className="px-6 py-4 text-left">Durum</th>
+                    <th className="px-6 py-4 text-left">Vade</th>
+                    <th className="px-6 py-4 text-right">İşlem</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-50">
+                  {invoices.map((inv: any) => {
+                    const stMap: Record<string,string> = { pending:'bg-yellow-100 text-yellow-700', paid:'bg-green-100 text-green-700', overdue:'bg-red-100 text-red-700' };
+                    const stLabel: Record<string,string> = { pending:'Bekliyor', paid:'Ödendi', overdue:'Gecikmiş' };
+                    return (
+                      <tr key={inv.id} className="hover:bg-gray-50/50">
+                        <td className="px-6 py-4 font-bold">{inv.client_name || inv.client_id}</td>
+                        <td className="px-6 py-4 text-gray-600">{inv.title||`#${inv.id}`}</td>
+                        <td className="px-6 py-4 font-bold text-xl">₺{parseFloat(inv.amount).toLocaleString('tr-TR')}</td>
+                        <td className="px-6 py-4"><span className={`text-xs font-black px-3 py-1 rounded-full ${stMap[inv.status]||'bg-gray-100 text-gray-600'}`}>{stLabel[inv.status]||inv.status}</span></td>
+                        <td className="px-6 py-4 text-gray-500">{inv.due_date||'—'}</td>
+                        <td className="px-6 py-4 text-right">
+                          {inv.status !== 'paid' && (
+                            <button onClick={async () => { await api.updateInvoice(inv.id,{status:'paid'}); const inv2=await api.getInvoices(); setInvoices(inv2); }} className="px-4 py-2 bg-green-100 text-green-700 rounded-xl text-sm font-bold">Ödendi İşaretle</button>
+                          )}
+                        </td>
+                      </tr>
+                    );
+                  })}
+                  {invoices.length === 0 && <tr><td colSpan={6} className="px-6 py-16 text-center text-gray-400">Fatura bulunamadı.</td></tr>}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        )}
+
+        {activeTab === 'reports' && (
+          <div className="space-y-8">
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+              {[
+                { label: 'Toplam Ciro', value: `₺${parseFloat(reports.totalRevenue||0).toLocaleString('tr-TR')}`, color:'text-green-600', icon: TrendingUp },
+                { label: 'Bekleyen Alacak', value: `₺${parseFloat(reports.pendingRevenue||0).toLocaleString('tr-TR')}`, color:'text-yellow-600', icon: CreditCard },
+                { label: 'Toplam Müşteri', value: reports.totalClients||clients.length, color:'text-blue-600', icon: Users },
+                { label: 'Aktif Proje', value: reports.activeProjects||projects.filter((p:any)=>p.status!=='done').length, color:'text-purple-600', icon: Folder },
+              ].map((s,i) => (
+                <div key={i} className="bg-white p-8 rounded-[32px] shadow-sm border border-gray-100">
+                  <div className="w-12 h-12 bg-gray-50 rounded-2xl flex items-center justify-center mb-4"><s.icon size={24} className={s.color} /></div>
+                  <p className={`text-3xl font-bold mb-1 ${s.color}`}>{s.value}</p>
+                  <p className="text-xs font-bold text-gray-400 uppercase tracking-widest">{s.label}</p>
+                </div>
+              ))}
+            </div>
+            <div className="bg-white p-8 rounded-[40px] shadow-sm border border-gray-100">
+              <h3 className="text-xl font-bold mb-6">Proje Dağılımı</h3>
+              {['onboarding','production','review','done'].map(st => {
+                const count = projects.filter((p:any)=>p.status===st).length;
+                const total = projects.length || 1;
+                const labelMap: Record<string,string> = { onboarding:'Başlatılıyor', production:'Üretimde', review:'İncelemede', done:'Tamamlandı' };
+                const colorMap: Record<string,string> = { onboarding:'bg-blue-500', production:'bg-purple-500', review:'bg-yellow-500', done:'bg-green-500' };
+                return (
+                  <div key={st} className="mb-4">
+                    <div className="flex justify-between text-sm font-bold mb-2">
+                      <span>{labelMap[st]}</span><span>{count} proje</span>
+                    </div>
+                    <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
+                      <div className={`h-full ${colorMap[st]} rounded-full`} style={{ width: `${(count/total)*100}%` }} />
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
           </div>
         )}
 
