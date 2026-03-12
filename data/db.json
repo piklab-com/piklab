@@ -1,0 +1,64 @@
+{
+  "services": [
+    { "id": 1, "title": "Sosyal Medya Yönetimi", "slug": "sosyal-medya-yonetimi", "description": "Markanızın dijital dünyadaki sesini profesyonelce yönetiyoruz.", "icon": "Share2", "content": "Yaratıcı içerikler, etkileşim odaklı stratejiler ve detaylı raporlama ile sosyal medya platformlarında fark yaratın." },
+    { "id": 2, "title": "Video Prodüksiyon", "slug": "video-produksiyon", "description": "Etkileyici ve profesyonel video içerikleri üretiyoruz.", "icon": "Video", "content": "Tanıtım filmleri, sosyal medya videoları ve reklam prodüksiyonları ile hikayenizi en iyi şekilde anlatın." },
+    { "id": 3, "title": "Grafik Tasarım", "slug": "grafik-tasarim", "description": "Görsel kimliğinizi modern ve çarpıcı tasarımlarla güçlendiriyoruz.", "icon": "Palette", "content": "Logo tasarımı, kurumsal kimlik ve dijital reklam görselleri ile markanızı görselleştirin." },
+    { "id": 4, "title": "Dijital Strateji & Danışmanlık", "slug": "dijital-strateji-danismanlik", "description": "İş süreçlerinizi optimize eden dijital yol haritaları oluşturuyoruz.", "icon": "Target", "content": "Veri analizi, pazar araştırması ve dijital dönüşüm stratejileri ile markanızın geleceğini profesyonelce kurgulayın." },
+    { "id": 5, "title": "Prodüksiyon / Tanıtım Filmi", "slug": "produksiyon-tanitim-filmi", "description": "", "icon": "Activity", "content": "" },
+    { "id": 6, "title": "Fotoğraf", "slug": "fotograf", "description": "", "icon": "Activity", "content": "" },
+    { "id": 7, "title": "Lokasyon/Konum Videosu", "slug": "lokasyon-konum-videosu", "description": "", "icon": "Activity", "content": "" },
+    { "id": 8, "title": "FPV Drone", "slug": "fpv-drone", "description": "", "icon": "Activity", "content": "" },
+    { "id": 9, "title": "Kurumsal Kimlik", "slug": "kurumsal-kimlik", "description": "", "icon": "Activity", "content": "" },
+    { "id": 10, "title": "Web & E-Ticaret", "slug": "web-e-ticaret", "description": "", "icon": "Activity", "content": "" },
+    { "id": 11, "title": "SEO & ADS", "slug": "seo-ads", "description": "", "icon": "Activity", "content": "" },
+    { "id": 12, "title": "Seslendirme", "slug": "seslendirme", "description": "", "icon": "Activity", "content": "" },
+    { "id": 13, "title": "Performans Pazarlama", "slug": "performans-pazarlama", "description": "", "icon": "Activity", "content": "" },
+    { "id": 14, "title": "Influencer Marketing", "slug": "influencer-marketing", "description": "", "icon": "Activity", "content": "" }
+  ],
+  "portfolio": [
+    { "id": "1", "title": "Vogue Fashion Film", "category": "Prodüksiyon", "type": "video", "url": "https://www.youtube.com/watch?v=dQw4w9WgXcQ", "thumbnail": "https://picsum.photos/seed/fashion/800/600", "description": "High-end fashion film for Vogue Turkey." },
+    { "id": "2", "title": "Tesla Model S Campaign", "category": "Fotoğraf", "type": "image", "url": "https://picsum.photos/seed/tesla/1920/1080", "thumbnail": "https://picsum.photos/seed/tesla/800/600", "description": "Product photography for Tesla." },
+    { "id": "3", "title": "Nike Air Max Launch", "category": "Sosyal Medya", "type": "video", "url": "https://www.youtube.com/watch?v=dQw4w9WgXcQ", "thumbnail": "https://picsum.photos/seed/nike/800/600", "description": "Social media campaign for Nike Air Max." }
+  ],
+  "packages": [
+    { "id": "1", "name": "Başlangıç", "price": "4.999", "period": "aylık", "features": ["4 Sosyal Medya Tasarımı", "1 Tanıtım Videosu (15sn)", "Temel SEO Desteği", "E-Posta Desteği"] },
+    { "id": "2", "name": "Profesyonel", "price": "12.499", "period": "aylık", "features": ["12 Sosyal Medya Tasarımı", "3 Tanıtım Videosu (30sn)", "Gelişmiş SEO & ADS", "7/24 Destek", "Marka Sesi Klonlama"] },
+    { "id": "3", "name": "Enterprise", "price": "29.999", "period": "aylık", "features": ["Sınırsız Tasarım", "Sınırsız Video Prodüksiyon", "Özel Hesap Yöneticisi", "Stratejik Danışmanlık", "7/24 Teknik Destek"] }
+  ],
+  "users": [
+    {
+      "id": "admin",
+      "username": "admin",
+      "password": "$2a$10$6Rz3cI...placeholder...hashed...admin123",
+      "role": "admin",
+      "displayName": "Admin"
+    },
+    {
+       "id": "client_1",
+       "username": "client",
+       "password": "$2a$10$6Rz3cI...placeholder...hashed...client123",
+       "role": "client",
+       "displayName": "Örnek Müşteri",
+       "email": "client@piklab.com"
+    }
+  ],
+  "tasks": [],
+  "settings": {
+    "heroTitle": "YENİ NESİL REKLAMCILIK AJANSI",
+    "heroSubtitle": "EN İYİLER İÇİN EN İYİSİ.",
+    "heroDescription": "Yeni nesil reklamcılık için çıktığımız bu yolda; her gün dünden biraz daha fazla çalışıyor, biraz daha fazla üretiyoruz.",
+    "contactEmail": "info@piklab.com",
+    "contactPhone": "+90 212 000 00 00",
+    "socialLinks": {
+      "instagram": "https://instagram.com/piklab",
+      "facebook": "https://facebook.com/piklab"
+    },
+    "address": "Beşiktaş, İstanbul"
+  },
+  "references": [
+    { "id": "1", "name": "Tesla", "logo_url": "https://upload.wikimedia.org/wikipedia/commons/e/e8/Tesla_logo.png" },
+    { "id": "2", "name": "Nike", "logo_url": "https://upload.wikimedia.org/wikipedia/commons/a/a6/Logo_NIKE.svg" },
+    { "id": "3", "name": "SpaceX", "logo_url": "https://upload.wikimedia.org/wikipedia/commons/2/2e/SpaceX_logo_black.svg" },
+    { "id": "4", "name": "Apple", "logo_url": "https://upload.wikimedia.org/wikipedia/commons/f/fa/Apple_logo_black.svg" }
+  ]
+}
