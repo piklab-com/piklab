@@ -1,69 +1,53 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
-import { User } from 'firebase/auth';
-import { auth, db } from '../firebase';
-import { onAuthStateChanged } from 'firebase/auth';
-import { doc, getDoc, setDoc } from 'firebase/firestore';
 import { UserProfile } from '../types';
 
 interface AuthContextType {
-  user: User | null;
+  user: any;
   profile: UserProfile | null;
   loading: boolean;
   isAdmin: boolean;
   isDesigner: boolean;
   isClient: boolean;
   loginAs: (role: 'admin' | 'designer' | 'client') => void;
+  loginWithAPI: (username: string, password: string) => Promise<void>;
   logout: () => void;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [user, setUser] = useState<User | null>(null);
+  const [user, setUser] = useState<any>(null);
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(true);
 
-  // Load mock user from localStorage if it exists (for offline/dev mode)
   useEffect(() => {
-    const mockUser = localStorage.getItem('piklab_mock_user');
-    if (mockUser) {
-      const data = JSON.parse(mockUser);
+    const savedProfile = localStorage.getItem('piklab_user');
+    const token = localStorage.getItem('piklab_token');
+    
+    if (savedProfile && token) {
+      const data = JSON.parse(savedProfile);
       setProfile(data);
-      setUser({ uid: data.uid, email: data.email } as any);
-      setLoading(false);
-      return;
+      setUser({ uid: data.uid, email: data.email });
     }
-
-    const unsubscribe = onAuthStateChanged(auth, async (user) => {
-      setUser(user);
-      if (user) {
-        try {
-          const userDoc = await getDoc(doc(db, 'users', user.uid));
-          if (userDoc.exists()) {
-            setProfile(userDoc.data() as UserProfile);
-          } else {
-            const newProfile: UserProfile = {
-              uid: user.uid,
-              email: user.email || '',
-              displayName: user.displayName || '',
-              role: 'client',
-              createdAt: new Date().toISOString()
-            };
-            try { await setDoc(doc(db, 'users', user.uid), newProfile); } catch(e) {}
-            setProfile(newProfile);
-          }
-        } catch (error) {
-          console.error('Auth error falling back to default:', error);
-          setProfile({ uid: user.uid, role: 'client', displayName: 'Kullanıcı' } as any);
-        }
-      } else {
-        setProfile(null);
-      }
-      setLoading(false);
-    });
-
-    return unsubscribe;
+    setLoading(false);
   }, []);
+
+  const loginWithAPI = async (username: string, password: string) => {
+    const res = await fetch('/api/auth/login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ username, password })
+    });
+    
+    if (!res.ok) throw new Error('Giriş başarısız');
+    const data = await res.json();
+    
+    localStorage.setItem('piklab_token', data.token);
+    localStorage.setItem('piklab_user', JSON.stringify(data.profile));
+    
+    setProfile(data.profile);
+    setUser({ uid: data.profile.uid, email: data.profile.email });
+  };
 
   const loginAs = (role: 'admin' | 'designer' | 'client') => {
     const mockProfile = {
@@ -72,15 +56,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       email: `${role}@piklab.com`,
       role: role,
     };
-    localStorage.setItem('piklab_mock_user', JSON.stringify(mockProfile));
+    localStorage.setItem('piklab_user', JSON.stringify(mockProfile));
+    localStorage.setItem('piklab_token', 'mock_token');
     setProfile(mockProfile as any);
-    setUser({ uid: mockProfile.uid, email: mockProfile.email } as any);
+    setUser({ uid: mockProfile.uid, email: mockProfile.email });
   };
 
   const logout = () => {
-    localStorage.removeItem('piklab_mock_user');
     localStorage.removeItem('piklab_token');
-    auth.signOut();
+    localStorage.removeItem('piklab_user');
     setUser(null);
     setProfile(null);
   };
@@ -93,6 +77,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     isDesigner: profile?.role === 'designer' || profile?.role === 'admin' || profile?.uid === 'designer_1',
     isClient: profile?.role === 'client' || profile?.uid === 'client_1',
     loginAs,
+    loginWithAPI,
     logout
   };
 
