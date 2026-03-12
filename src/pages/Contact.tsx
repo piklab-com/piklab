@@ -26,7 +26,7 @@ const Contact = () => {
 
   return (
     <>
-      <SEO title="İletişim" description="Piklab ile iletişime geçin — boş bir proje fikri bile olsa. hello@piklab.com" />
+      <SEO title="İletişim" description="Teras Medya ile iletişime geçin — Hayallerinizi gerçeğe dönüştürelim. info@terasmedya.com" />
       <div className="pt-24 bg-accent min-h-screen flex items-center">
         <section className="section-padding w-full">
           <div className="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-2 gap-20">
@@ -40,14 +40,14 @@ const Contact = () => {
                   <div className="w-16 h-16 bg-white border-4 border-brutal-black flex items-center justify-center text-primary shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]"><Mail size={32} /></div>
                   <div>
                     <p className="text-sm font-bold uppercase tracking-widest text-gray-500 mb-1">E-posta</p>
-                    <p className="text-2xl font-display">hello@piklab.com</p>
+                    <p className="text-2xl font-display">info@terasmedya.com</p>
                   </div>
                 </div>
                 <div className="flex items-center gap-6">
                   <div className="w-16 h-16 bg-white border-4 border-brutal-black flex items-center justify-center text-primary shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]"><Phone size={32} /></div>
                   <div>
                     <p className="text-sm font-bold uppercase tracking-widest text-gray-500 mb-1">Telefon</p>
-                    <p className="text-2xl font-display">+90 (555) 000 00 00</p>
+                    <p className="text-2xl font-display">+90 540 005 25 20</p>
                   </div>
                 </div>
               </div>
