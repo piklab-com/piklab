@@ -43,27 +43,33 @@ if (!admin.apps.length) {
     // Try to use Service Account JSON from env var first (Best for Railway/Heroku)
     if (process.env.FIREBASE_SERVICE_ACCOUNT) {
       try {
+        console.log('Attempting to initialize Firebase Admin with FIREBASE_SERVICE_ACCOUNT env var...');
         const serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT);
         adminConfig.credential = admin.credential.cert(serviceAccount);
-        console.log('Firebase Admin initialized with FIREBASE_SERVICE_ACCOUNT env var');
+        console.log('✅ Firebase Admin initialized with environment variable.');
       } catch (e) {
-        console.error('Error parsing FIREBASE_SERVICE_ACCOUNT env var:', e);
+        console.error('❌ Error parsing FIREBASE_SERVICE_ACCOUNT env var. Please check the JSON format.');
+        console.error('Error details:', e instanceof Error ? e.message : String(e));
       }
     } 
     
     // Fallback to ADC if no cert provided
     if (!adminConfig.credential) {
       try {
+        console.warn('⚠️ FIREBASE_SERVICE_ACCOUNT not found or invalid. Falling back to applicationDefault credentials...');
         adminConfig.credential = admin.credential.applicationDefault();
-        console.log('Firebase Admin initialized with applicationDefault');
+        console.log('✅ Firebase Admin initialized with applicationDefault');
       } catch (e) {
-        console.warn('No credentials found. Firestore operations might fail. Project ID:', adminConfig.projectId);
+        console.error('❌ CRITICAL: No credentials found. Firestore operations will fail.');
+        console.error('Project ID:', adminConfig.projectId);
+        console.error('Reason:', e instanceof Error ? e.message : String(e));
       }
     }
 
     admin.initializeApp(adminConfig);
+    console.log('🚀 Firebase Admin SDK initialized successfully.');
   } catch (error) {
-    console.error('Firebase Admin initialization error:', error);
+    console.error('❌ CRITICAL ERROR in Firebase Admin initialization:', error);
   }
 }
 
