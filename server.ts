@@ -32,19 +32,19 @@ if (!admin.apps.length) {
   try {
     const adminConfig: admin.AppOptions = {};
     
-    // In Google Cloud environments, applicationDefault() works automatically.
-    // In other environments (like Railway) without a service account JSON, we must provide the projectId
+    // Explicitly set project ID if available to help Firestore auto-detection
     if (firebaseConfig.projectId) {
       adminConfig.projectId = firebaseConfig.projectId;
-      // Try to use ADC, but if it fails, it will fall back to unauthenticated 
-      // which is fine for public Firestore reading if rules allow
-      try {
-        adminConfig.credential = admin.credential.applicationDefault();
-      } catch (e) {
-        console.warn('No GOOGLE_APPLICATION_CREDENTIALS found. Running without explicit admin credentials.');
+      if (!process.env.GCLOUD_PROJECT) {
+        process.env.GCLOUD_PROJECT = firebaseConfig.projectId;
       }
-    } else {
-       adminConfig.credential = admin.credential.applicationDefault();
+    }
+
+    // Try to use ADC, but don't fail if it's missing on non-GCP hosts
+    try {
+      adminConfig.credential = admin.credential.applicationDefault();
+    } catch (e) {
+      console.warn('No GOOGLE_APPLICATION_CREDENTIALS found. Project ID:', adminConfig.projectId);
     }
 
     admin.initializeApp(adminConfig);
@@ -57,9 +57,10 @@ if (!admin.apps.length) {
 // Get Firestore instance with error handling
 let db: admin.firestore.Firestore;
 try {
-  // Try using the default database first
-  db = getFirestore(admin.app());
-  console.log('Firestore initialized with default database');
+  // Use custom database ID if provided in config
+  const databaseId = firebaseConfig.firestoreDatabaseId || '(default)';
+  db = getFirestore(admin.app(), databaseId);
+  console.log(`Firestore initialized with database: ${databaseId}`);
 } catch (error) {
   console.error('Firestore initialization error:', error);
   throw error;
