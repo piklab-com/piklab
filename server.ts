@@ -30,11 +30,25 @@ try {
 // Initialize Firebase Admin
 if (!admin.apps.length) {
   try {
-    admin.initializeApp({
-      credential: admin.credential.applicationDefault(),
-      projectId: firebaseConfig.projectId,
-    });
-    console.log('Firebase Admin initialized with applicationDefault');
+    const adminConfig: admin.AppOptions = {};
+    
+    // In Google Cloud environments, applicationDefault() works automatically.
+    // In other environments (like Railway) without a service account JSON, we must provide the projectId
+    if (firebaseConfig.projectId) {
+      adminConfig.projectId = firebaseConfig.projectId;
+      // Try to use ADC, but if it fails, it will fall back to unauthenticated 
+      // which is fine for public Firestore reading if rules allow
+      try {
+        adminConfig.credential = admin.credential.applicationDefault();
+      } catch (e) {
+        console.warn('No GOOGLE_APPLICATION_CREDENTIALS found. Running without explicit admin credentials.');
+      }
+    } else {
+       adminConfig.credential = admin.credential.applicationDefault();
+    }
+
+    admin.initializeApp(adminConfig);
+    console.log('Firebase Admin initialized.');
   } catch (error) {
     console.error('Firebase Admin initialization error:', error);
   }
