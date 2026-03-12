@@ -79,8 +79,10 @@ export default function DesignerDashboard() {
         title: newTaskTitle,
         description: newTaskDesc,
         clientId: newTaskClientId,
+        brandId: 'default',
         status: 'designing',
         type: newTaskType,
+        managerNote: '',
       });
       await loadData();
       setShowNewTask(false);
@@ -516,7 +518,7 @@ export default function DesignerDashboard() {
               <div className="flex justify-between items-center mb-6">
                 <h2 className="text-2xl font-bold">Yayın Tarihi</h2>
                 <button onClick={() => setShowScheduleModal(false)} className="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center">
-                  <X size={20} />
+                  <XIcon size={20} />
                 </button>
               </div>
               <p className="font-bold text-lg mb-1">{selectedTaskToSchedule.title}</p>
@@ -550,7 +552,7 @@ export default function DesignerDashboard() {
               <div className="flex justify-between items-center mb-8">
                 <h2 className="text-2xl font-bold">Yeni Görev Oluştur</h2>
                 <button onClick={() => setShowNewTask(false)} className="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center">
-                  <X size={20} />
+                  <XIcon size={20} />
                 </button>
               </div>
               <div className="space-y-4">
@@ -614,3 +616,21 @@ export default function DesignerDashboard() {
     </div>
   );
 }
+
+const XIcon = ({ size, ...props }: any) => (
+  <svg
+    {...props}
+    xmlns="http://www.w3.org/2000/svg"
+    width={size}
+    height={size}
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="2"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+  >
+    <path d="M18 6 6 18" />
+    <path d="m6 6 12 12" />
+  </svg>
+);
