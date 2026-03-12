@@ -34,9 +34,9 @@ export const OnboardingModal = ({ onClose }: OnboardingModalProps) => {
         });
       }
       // Save to localStorage as fallback
-      localStorage.setItem('piklab_onboarded', 'true');
+      localStorage.setItem('teras_onboarded', 'true');
     } catch {
-      localStorage.setItem('piklab_onboarded', 'true');
+      localStorage.setItem('teras_onboarded', 'true');
     } finally {
       setSaving(false);
       onClose();
