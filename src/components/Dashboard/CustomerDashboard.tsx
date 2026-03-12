@@ -9,7 +9,6 @@ import {
 import { useAuth } from '../../context/AuthContext';
 import { api, Task, Brand } from '../../lib/api';
 import { TaskDetailModal } from './TaskDetailModal';
-import { generateMarketingBrief } from '../../services/aiService';
 
 type ActiveTab = 'overview' | 'tasks' | 'dna' | 'analytics';
 
@@ -20,12 +19,6 @@ export default function CustomerDashboard() {
   const [brands, setBrands] = useState<Brand[]>([]);
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
   
-  // AI Brief State
-  const [showBriefModal, setShowBriefModal] = useState(false);
-  const [briefInput, setBriefInput] = useState('');
-  const [isGenerating, setIsGenerating] = useState(false);
-  const [generatedTask, setGeneratedTask] = useState<Partial<Task> | null>(null);
-
   // Fallback to client_1 if no profile (for local testing)
   const currentClientId = profile?.uid || 'client_1';
 
@@ -41,41 +34,6 @@ export default function CustomerDashboard() {
     window.addEventListener('storage', loadData);
     return () => window.removeEventListener('storage', loadData);
   }, [currentClientId]);
-
-  const handleCreateBrief = async () => {
-    if (!briefInput.trim()) return;
-    setIsGenerating(true);
-    try {
-      const brief = await generateMarketingBrief(briefInput);
-      if (brief) {
-        setGeneratedTask({
-          title: brief.title,
-          description: brief.description,
-          type: 'post',
-          status: 'brief'
-        });
-      }
-    } catch (error) {
-      console.error(error);
-    } finally {
-      setIsGenerating(false);
-    }
-  };
-
-  const confirmGeneratedTask = async () => {
-    if (!generatedTask) return;
-    await api.addTask({
-      title: generatedTask.title || 'Yeni Görev',
-      description: generatedTask.description || '',
-      clientId: currentClientId,
-      status: 'brief',
-      type: generatedTask.type as any || 'post',
-    });
-    setGeneratedTask(null);
-    setShowBriefModal(false);
-    setBriefInput('');
-    await loadData();
-  };
 
   const handleUpdateBrandDna = async (brandId: string, updates: Partial<Brand>) => {
     await api.updateBrand(brandId, updates);
@@ -169,13 +127,6 @@ export default function CustomerDashboard() {
               "Fikirlerinizi gerçeğe dönüştürüyoruz."
             </p>
           </div>
-          <button 
-            onClick={() => setShowBriefModal(true)}
-            className="bg-primary text-white px-6 py-4 rounded-2xl font-bold flex items-center gap-3 hover:bg-primary/90 smooth-transition shadow-xl shadow-primary/20"
-          >
-            <Sparkles size={20} />
-            Yapay Zeka ile Brief Oluştur
-          </button>
         </header>
 
         {activeTab === 'overview' && (
@@ -299,7 +250,7 @@ export default function CustomerDashboard() {
                         <div className="max-w-xs mx-auto text-gray-400">
                           <Clock size={48} className="mx-auto mb-4 opacity-20" />
                           <p className="font-bold">Henüz bir işiniz bulunmuyor.</p>
-                          <p className="text-sm mt-2">Hemen sağ üstten yeni bir brief oluşturarak başlayabilirsiniz!</p>
+                          <p className="text-sm mt-2">Projelerinizi buradan takip edebilirsiniz.</p>
                         </div>
                       </td>
                     </tr>
@@ -317,17 +268,14 @@ export default function CustomerDashboard() {
                 <div className="flex justify-between items-start mb-10">
                   <div>
                     <h2 className="text-3xl font-bold mb-2">{brand.name} DNA</h2>
-                    <p className="text-gray-400">Marka kimliğinizi ve yapay zeka hafızasını buradan yönetin.</p>
-                  </div>
-                  <div className="flex gap-4">
-                     <span className="px-4 py-2 bg-primary/10 text-primary rounded-xl font-bold text-sm">Aktif Hafıza: %98</span>
+                    <p className="text-gray-400">Marka kimliğinizi ve proje rehberinizi buradan yönetin.</p>
                   </div>
                 </div>
 
                 <div className="grid grid-cols-2 gap-10">
                   <div>
                     <h3 className="text-sm font-black text-secondary uppercase tracking-widest mb-6 flex items-center gap-2">
-                       <Sparkles size={16} className="text-primary" /> Marka Ses Tonu
+                       Marka Ses Tonu
                     </h3>
                     <textarea 
                       defaultValue={brand.toneOfVoice || "Profesyonel, samimi ve yenilikçi bir dil kullanımı."}
@@ -337,7 +285,7 @@ export default function CustomerDashboard() {
                   </div>
                   <div>
                     <h3 className="text-sm font-black text-secondary uppercase tracking-widest mb-6 flex items-center gap-2">
-                       <Target size={16} className="text-primary" /> Renk Paleti (Hex)
+                       Renk Paleti (Hex)
                     </h3>
                     <div className="flex flex-wrap gap-4 mb-6">
                       {(brand.colors || ['#FF6321', '#141414', '#FFFFFF']).map((color, idx) => (
@@ -364,92 +312,6 @@ export default function CustomerDashboard() {
           </div>
         )}
       </main>
-
-      {/* AI Brief Modal */}
-      <AnimatePresence>
-        {showBriefModal && (
-          <motion.div 
-            initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-            className="fixed inset-0 z-[100] bg-secondary/80 backdrop-blur-sm flex items-center justify-center p-6"
-          >
-            <motion.div 
-              initial={{ scale: 0.9, y: 20 }} animate={{ scale: 1, y: 0 }} exit={{ scale: 0.9, y: 20 }}
-              className="bg-white w-full max-w-2xl rounded-[40px] p-10 shadow-2xl overflow-hidden relative"
-            >
-              {!generatedTask ? (
-                <>
-                  <div className="flex justify-between items-center mb-8">
-                    <div className="flex items-center gap-4">
-                      <div className="w-12 h-12 bg-primary rounded-2xl flex items-center justify-center text-white">
-                        <Wand2 size={24} />
-                      </div>
-                      <div>
-                        <h2 className="text-3xl font-bold">Fikrini Anlat</h2>
-                        <p className="text-gray-400">AI senin için detaylı bir brief hazırlasın.</p>
-                      </div>
-                    </div>
-                    <button onClick={() => setShowBriefModal(false)} className="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center">
-                      <X size={20} />
-                    </button>
-                  </div>
-
-                  <div className="space-y-6">
-                    <textarea 
-                      value={briefInput}
-                      onChange={(e) => setBriefInput(e.target.value)}
-                      placeholder="Örn: Yeni çıkacak kahve makinemiz için modern ve minimalist bir Instagram postu istiyorum..."
-                      className="w-full h-48 p-6 bg-gray-50 border-none rounded-3xl outline-none focus:ring-2 focus:ring-primary text-lg resize-none"
-                    />
-                    <button 
-                      onClick={handleCreateBrief}
-                      disabled={!briefInput.trim() || isGenerating}
-                      className="w-full py-5 bg-primary text-white rounded-2xl font-bold text-lg hover:bg-primary/90 smooth-transition shadow-xl shadow-primary/20 flex items-center justify-center gap-3"
-                    >
-                      {isGenerating ? (
-                        <>
-                          <div className="w-6 h-6 border-4 border-white/30 border-t-white rounded-full animate-spin" />
-                          Yapay Zeka Analiz Ediyor...
-                        </>
-                      ) : (
-                        <>
-                          <Sparkles size={24} />
-                          Brief'i Hazırla
-                        </>
-                      )}
-                    </button>
-                  </div>
-                </>
-              ) : (
-                <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }}>
-                  <h2 className="text-2xl font-bold mb-6 flex items-center gap-2">
-                    <CheckCircle className="text-green-500" /> Yapay Zeka Taslağı Hazırladı
-                  </h2>
-                  <div className="bg-accent p-6 rounded-3xl mb-8">
-                    <p className="text-xs font-black text-primary uppercase tracking-widest mb-2">Görev Başlığı:</p>
-                    <p className="text-xl font-bold mb-6">{generatedTask.title}</p>
-                    <p className="text-xs font-black text-primary uppercase tracking-widest mb-2">Detaylı Açıklama:</p>
-                    <p className="text-gray-600 leading-relaxed mb-6">{generatedTask.description}</p>
-                  </div>
-                  <div className="flex gap-4">
-                    <button 
-                      onClick={() => setGeneratedTask(null)}
-                      className="flex-1 py-4 rounded-2xl border border-gray-100 font-bold hover:bg-gray-50 smooth-transition"
-                    >
-                      Yeniden Yaz
-                    </button>
-                    <button 
-                      onClick={confirmGeneratedTask}
-                      className="flex-1 py-4 bg-primary text-white rounded-2xl font-bold hover:bg-primary/90 smooth-transition shadow-lg shadow-primary/20"
-                    >
-                      Onayla ve Sıraya Al
-                    </button>
-                  </div>
-                </motion.div>
-              )}
-            </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
 
       <AnimatePresence>
         {selectedTask && (

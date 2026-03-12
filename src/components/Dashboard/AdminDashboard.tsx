@@ -5,16 +5,14 @@ import {
   LayoutDashboard, Users, FileText, 
   Settings, LogOut, Plus, Search,
   CheckCircle, Clock, AlertCircle,
-  MoreHorizontal, ChevronRight, BarChart3, MessageSquare, Video,
-  Volume2, Calendar as CalendarIcon, Sparkles
+  MoreHorizontal, ChevronRight, BarChart3, MessageSquare,
+  Calendar as CalendarIcon
 } from 'lucide-react';
 import { db, auth, handleFirestoreError, OperationType, logout } from '../../firebase';
 import { collection, query, onSnapshot, updateDoc, doc, addDoc, where } from 'firebase/firestore';
 import { Task, UserProfile, Brand } from '../../types';
 import { TaskDetailModal } from './TaskDetailModal';
-import { generateVideoFromText, generateMultiSpeakerSpeech, generatePostingSchedule } from '../../services/aiService';
 import { SmartCalendar } from './SmartCalendar';
-import { LiveAssistant } from './LiveAssistant';
 import { useSiteSettings } from '../../context/SiteSettingsContext';
 import { Save } from 'lucide-react';
 
@@ -30,18 +28,10 @@ const AdminDashboard = () => {
   const [tasks, setTasks] = useState<Task[]>([]);
   const [clients, setClients] = useState<UserProfile[]>([]);
   const [brands, setBrands] = useState<Brand[]>([]);
-  const [activeTab, setActiveTab] = useState<'overview' | 'tasks' | 'clients' | 'video' | 'tts' | 'calendar' | 'assistant' | 'settings' | 'cms'>('overview');
+  const [activeTab, setActiveTab] = useState<'overview' | 'tasks' | 'clients' | 'calendar' | 'settings' | 'cms'>('overview');
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
   const [currentUser, setCurrentUser] = useState<UserProfile | null>(null);
-  const [videoPrompt, setVideoPrompt] = useState('');
-  const [isGeneratingVideo, setIsGeneratingVideo] = useState(false);
-  const [generatedVideoUrl, setGeneratedVideoUrl] = useState<string | null>(null);
   
-  // TTS State
-  const [ttsText, setTtsText] = useState('');
-  const [isGeneratingTts, setIsGeneratingTts] = useState(false);
-  const [generatedTtsUrl, setGeneratedTtsUrl] = useState<string | null>(null);
-
   // CMS State
   const { settings, updateSettings } = useSiteSettings();
   const [cmsForm, setCmsForm] = useState<any>(settings || {});
@@ -104,7 +94,6 @@ const AdminDashboard = () => {
     if (destination.droppableId === source.droppableId && destination.index === source.index) return;
 
     const newStatus = destination.droppableId as Task['status'];
-    const task = tasks.find(t => t.id === draggableId);
     
     // Optimistic UI update
     setTasks(prev => prev.map(t => t.id === draggableId ? { ...t, status: newStatus } : t));
@@ -115,59 +104,11 @@ const AdminDashboard = () => {
         updatedAt: new Date().toISOString()
       };
 
-      if (newStatus === 'approved' && task && !task.caption) {
-        try {
-          const { getDoc } = await import('firebase/firestore');
-          const brandDoc = await getDoc(doc(db, 'brands', task.brandId));
-          if (brandDoc.exists()) {
-            const brandData = brandDoc.data() as any;
-            const { generateSocialContent } = await import('../../services/aiService');
-            const socialContent = await generateSocialContent(task, brandData);
-            if (socialContent) {
-              updates.caption = socialContent.caption;
-              updates.hashtags = socialContent.hashtags;
-            }
-          }
-        } catch (aiError) {
-          console.error('Failed to generate social content:', aiError);
-        }
-      }
-
       await updateDoc(doc(db, 'tasks', draggableId), updates);
     } catch (error) {
       handleFirestoreError(error, OperationType.UPDATE, `tasks/${draggableId}`);
       // Revert on error (simple reload)
       window.location.reload();
-    }
-  };
-
-  const handleGenerateVideo = async () => {
-    if (!videoPrompt.trim()) return;
-    setIsGeneratingVideo(true);
-    setGeneratedVideoUrl(null);
-    try {
-      const url = await generateVideoFromText(videoPrompt);
-      setGeneratedVideoUrl(url);
-    } catch (error) {
-      console.error('Video generation failed:', error);
-      alert('Video üretilirken bir hata oluştu.');
-    } finally {
-      setIsGeneratingVideo(false);
-    }
-  };
-
-  const handleGenerateTts = async () => {
-    if (!ttsText.trim()) return;
-    setIsGeneratingTts(true);
-    setGeneratedTtsUrl(null);
-    try {
-      const url = await generateMultiSpeakerSpeech(ttsText);
-      setGeneratedTtsUrl(url);
-    } catch (error) {
-      console.error('TTS generation failed:', error);
-      alert('Seslendirme üretilirken bir hata oluştu.');
-    } finally {
-      setIsGeneratingTts(false);
     }
   };
 
@@ -220,28 +161,10 @@ const AdminDashboard = () => {
             label="Müşteriler" 
           />
           <SidebarItem 
-            active={activeTab === 'video'} 
-            onClick={() => setActiveTab('video')} 
-            icon={Video} 
-            label="Video Üretici (Veo)" 
-          />
-          <SidebarItem 
-            active={activeTab === 'tts'} 
-            onClick={() => setActiveTab('tts')} 
-            icon={Volume2} 
-            label="Seslendirme (TTS)" 
-          />
-          <SidebarItem 
             active={activeTab === 'calendar'} 
             onClick={() => setActiveTab('calendar')} 
             icon={CalendarIcon} 
             label="İçerik Takvimi" 
-          />
-          <SidebarItem 
-            active={activeTab === 'assistant'} 
-            onClick={() => setActiveTab('assistant')} 
-            icon={Sparkles} 
-            label="Canlı Asistan" 
           />
           <SidebarItem 
             active={activeTab === 'cms'} 
@@ -446,132 +369,12 @@ const AdminDashboard = () => {
           </div>
         )}
 
-        {activeTab === 'video' && (
-          <div className="bg-white p-8 rounded-[40px] shadow-sm border border-gray-100 max-w-4xl mx-auto">
-            <div className="flex items-center gap-4 mb-8">
-              <div className="w-16 h-16 rounded-2xl bg-primary/10 flex items-center justify-center text-primary">
-                <Video size={32} />
-              </div>
-              <div>
-                <h2 className="text-2xl font-bold">Veo Video Üretici</h2>
-                <p className="text-gray-500">Metin açıklamalarından yüksek kaliteli tanıtım videoları oluşturun.</p>
-              </div>
-            </div>
-
-            <div className="space-y-6">
-              <div>
-                <label className="block text-sm font-bold text-gray-700 mb-2">Video Senaryosu / Açıklaması</label>
-                <textarea
-                  value={videoPrompt}
-                  onChange={(e) => setVideoPrompt(e.target.value)}
-                  placeholder="Örn: Neon ışıklı bir şehirde hızla ilerleyen fütüristik bir araba, sinematik çekim, 4k çözünürlük..."
-                  className="w-full h-32 p-4 bg-gray-50 border border-gray-200 rounded-2xl outline-none focus:ring-2 focus:ring-primary resize-none"
-                />
-              </div>
-
-              <button
-                onClick={handleGenerateVideo}
-                disabled={isGeneratingVideo || !videoPrompt.trim()}
-                className="w-full py-4 bg-primary text-white rounded-2xl font-bold hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed smooth-transition flex items-center justify-center gap-2"
-              >
-                {isGeneratingVideo ? (
-                  <>
-                    <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                    Video Üretiliyor (Bu işlem birkaç dakika sürebilir)...
-                  </>
-                ) : (
-                  <>
-                    <Video size={20} />
-                    Video Oluştur
-                  </>
-                )}
-              </button>
-
-              {generatedVideoUrl && (
-                <div className="mt-8 p-6 bg-gray-50 rounded-3xl border border-gray-100">
-                  <h3 className="font-bold mb-4">Üretilen Video</h3>
-                  <div className="aspect-video bg-black rounded-2xl overflow-hidden relative">
-                    <div className="absolute inset-0 flex flex-col items-center justify-center text-white p-8 text-center">
-                      <Video size={48} className="mb-4 opacity-50" />
-                      <p className="mb-4">Video başarıyla üretildi.</p>
-                      <a 
-                        href={generatedVideoUrl} 
-                        target="_blank" 
-                        rel="noopener noreferrer"
-                        className="px-6 py-3 bg-white text-black font-bold rounded-xl hover:bg-gray-100 smooth-transition"
-                      >
-                        Videoyu İndir / Görüntüle
-                      </a>
-                    </div>
-                  </div>
-                </div>
-              )}
-            </div>
-          </div>
-        )}
-
-        {activeTab === 'tts' && (
-          <div className="bg-white p-8 rounded-[40px] shadow-sm border border-gray-100 max-w-4xl mx-auto">
-            <div className="flex items-center gap-4 mb-8">
-              <div className="w-16 h-16 rounded-2xl bg-primary/10 flex items-center justify-center text-primary">
-                <Volume2 size={32} />
-              </div>
-              <div>
-                <h2 className="text-2xl font-bold">Marka Sesi & TTS</h2>
-                <p className="text-gray-500">Profesyonel seslendirmeler ve diyaloglar oluşturun.</p>
-              </div>
-            </div>
-
-            <div className="space-y-6">
-              <div>
-                <label className="block text-sm font-bold text-gray-700 mb-2">Seslendirme Metni</label>
-                <p className="text-xs text-gray-400 mb-2">İpucu: Diyalog oluşturmak için "Joe: Merhaba, Jane: Selam" formatını kullanabilirsiniz.</p>
-                <textarea
-                  value={ttsText}
-                  onChange={(e) => setTtsText(e.target.value)}
-                  placeholder="Seslendirilmesini istediğiniz metni buraya yazın..."
-                  className="w-full h-32 p-4 bg-gray-50 border border-gray-200 rounded-2xl outline-none focus:ring-2 focus:ring-primary resize-none"
-                />
-              </div>
-
-              <button
-                onClick={handleGenerateTts}
-                disabled={isGeneratingTts || !ttsText.trim()}
-                className="w-full py-4 bg-primary text-white rounded-2xl font-bold hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed smooth-transition flex items-center justify-center gap-2"
-              >
-                {isGeneratingTts ? (
-                  <>
-                    <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                    Ses Üretiliyor...
-                  </>
-                ) : (
-                  <>
-                    <Volume2 size={20} />
-                    Seslendirme Oluştur
-                  </>
-                )}
-              </button>
-
-              {generatedTtsUrl && (
-                <div className="mt-8 p-6 bg-gray-50 rounded-3xl border border-gray-100">
-                  <h3 className="font-bold mb-4">Üretilen Ses</h3>
-                  <audio src={generatedTtsUrl} controls className="w-full" />
-                </div>
-              )}
-            </div>
-          </div>
-        )}
-
         {activeTab === 'calendar' && (
           <SmartCalendar 
             tasks={tasks} 
             brand={brands[0] || {}} 
             onUpdateTask={handleUpdateTask} 
           />
-        )}
-
-        {activeTab === 'assistant' && (
-          <LiveAssistant />
         )}
 
         {activeTab === 'cms' && (

@@ -105,7 +105,7 @@ async function initializeFirestoreData() {
         { id: 1, title: 'Sosyal Medya Yönetimi', slug: 'sosyal-medya-yonetimi', description: 'Markanızın dijital dünyadaki sesini profesyonelce yönetiyoruz.', icon: 'Share2', content: 'Yaratıcı içerikler, etkileşim odaklı stratejiler ve detaylı raporlama ile sosyal medya platformlarında fark yaratın.' },
         { id: 2, title: 'Video Prodüksiyon', slug: 'video-produksiyon', description: 'Etkileyici ve profesyonel video içerikleri üretiyoruz.', icon: 'Video', content: 'Tanıtım filmleri, sosyal medya videoları ve reklam prodüksiyonları ile hikayenizi en iyi şekilde anlatın.' },
         { id: 3, title: 'Grafik Tasarım', slug: 'grafik-tasarim', description: 'Görsel kimliğinizi modern ve çarpıcı tasarımlarla güçlendiriyoruz.', icon: 'Palette', content: 'Logo tasarımı, kurumsal kimlik ve dijital reklam görselleri ile markanızı görselleştirin.' },
-        { id: 4, title: 'AI Entegrasyonları', slug: 'ai-entegrasyonlari', description: 'Yapay zeka teknolojileri ile iş süreçlerinizi hızlandırıyoruz.', icon: 'Sparkles', content: 'Veo, Gemini ve diğer AI modelleri ile içerik üretimini ve müşteri etkileşimini bir üst seviyeye taşıyın.' },
+        { id: 4, title: 'Dijital Strateji & Danışmanlık', slug: 'dijital-strateji-danismanlik', description: 'İş süreçlerinizi optimize eden dijital yol haritaları oluşturuyoruz.', icon: 'Target', content: 'Veri analizi, pazar araştırması ve dijital dönüşüm stratejileri ile markanızın geleceğini profesyonelce kurgulayın.' },
         { id: 5, title: 'Prodüksiyon / Tanıtım Filmi', slug: 'produksiyon-tanitim-filmi', description: '', icon: 'Activity', content: '' },
         { id: 6, title: 'Fotoğraf', slug: 'fotograf', description: '', icon: 'Activity', content: '' },
         { id: 7, title: 'Lokasyon/Konum Videosu', slug: 'lokasyon-konum-videosu', description: '', icon: 'Activity', content: '' },
@@ -150,7 +150,7 @@ async function initializeFirestoreData() {
       const defaultPackages = [
         { name: 'Başlangıç', price: '4.999', period: 'aylık', features: JSON.stringify(['4 Sosyal Medya Tasarımı', '1 Tanıtım Videosu (15sn)', 'Temel SEO Desteği', 'E-Posta Desteği']) },
         { name: 'Profesyonel', price: '12.499', period: 'aylık', features: JSON.stringify(['12 Sosyal Medya Tasarımı', '3 Tanıtım Videosu (30sn)', 'Gelişmiş SEO & ADS', '7/24 Destek', 'Marka Sesi Klonlama']) },
-        { name: 'Enterprise', price: '29.999', period: 'aylık', features: JSON.stringify(['Sınırsız Tasarım', 'Sınırsız Video Prodüksiyon', 'Özel Hesap Yöneticisi', 'Stratejik Danışmanlık', 'Veo AI Entegrasyonu']) }
+        { name: 'Enterprise', price: '29.999', period: 'aylık', features: JSON.stringify(['Sınırsız Tasarım', 'Sınırsız Video Prodüksiyon', 'Özel Hesap Yöneticisi', 'Stratejik Danışmanlık', '7/24 Teknik Destek']) }
       ];
       const batch = db.batch();
       defaultPackages.forEach(pkg => batch.set(packagesCol.doc(), pkg));
