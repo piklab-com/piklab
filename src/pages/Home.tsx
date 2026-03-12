@@ -120,20 +120,20 @@ const FlowSection = () => (
   <section className="section-padding bg-brutal-black text-white border-b-4 border-brutal-black relative overflow-hidden">
     <div className="absolute inset-0 opacity-20 pointer-events-none">
       <div className="marquee-track flex gap-8 whitespace-nowrap text-8xl font-display translate-y-8">
-        {[...Array(4)].map((_, i) => <span key={i} className="mx-8">PİKLAB FLOW •</span>)}
+        {[...Array(4)].map((_, i) => <span key={i} className="mx-8">TERAS FLOW •</span>)}
       </div>
     </div>
     <div className="max-w-7xl mx-auto relative z-10">
       <div className="flex flex-col lg:flex-row items-start lg:items-end justify-between gap-10 mb-16">
         <div>
           <p className="inline-flex items-center gap-2 px-4 py-2 bg-primary text-brutal-black border-4 border-brutal-black font-bold uppercase tracking-widest text-xs mb-6">
-            <Sparkles size={16} /> Piklab Flow
+            <Sparkles size={16} /> Teras Flow
           </p>
           <h2 className="text-fluid-title font-display leading-none mb-6">
             Süreç değil, <br /><span className="text-primary">sistem</span> tasarladık.
           </h2>
           <p className="text-gray-200 text-lg max-w-xl font-medium border-l-4 border-primary pl-6">
-            Piklab, aboneliğini başlattığın andan itibaren; paket seçimi, brief, üretim, onay ve raporlama adımlarını senin için tek bir akışa dönüştürür.
+            Teras Medya, aboneliğini başlattığın andan itibaren; paket seçimi, brief, üretim, onay ve raporlama adımlarını senin için tek bir akışa dönüştürür.
           </p>
         </div>
         <div className="bg-accent text-brutal-black brutal-border px-6 py-4 max-w-sm rotate-1">
@@ -280,8 +280,8 @@ const ReferencesSection = ({ brands }: { brands: any[] }) => {
 
 // ── Testimonials Section ───────────────────────────────────────────────
 const testimonials = [
-  { name: 'Ayşe Kaya', role: 'Pazarlama Direktörü, FinTech A.Ş.', text: 'Piklab ile çalışmak adeta bir dönüşüm hikayesi oldu. 6 ayda sosyal medya erişimimiz 4 kat arttı. Ekibin hızı, yaratıcılığı ve veri odaklı yaklaşımı bizi çok etkiledi.', stars: 5 },
-  { name: 'Mehmet Demir', role: 'CEO, Urban Kafe Zinciri', text: 'Video prodüksiyon kalitesi harika. İlk FPV drone çekimimiz yayınlandığında organik olarak viral oldu. Bu başarı tamamen Piklab\'ın vizyoner bakış açısı sayesinde.', stars: 5 },
+  { name: 'Ayşe Kaya', role: 'Pazarlama Direktörü, FinTech A.Ş.', text: 'Teras Medya ile çalışmak adeta bir dönüşüm hikayesi oldu. 6 ayda sosyal medya erişimimiz 4 kat arttı. Ekibin hızı, yaratıcılığı ve veri odaklı yaklaşımı bizi çok etkiledi.', stars: 5 },
+  { name: 'Mehmet Demir', role: 'CEO, Urban Kafe Zinciri', text: 'Video prodüksiyon kalitesi harika. İlk FPV drone çekimimiz yayınlandığında organik olarak viral oldu. Bu başarı tamamen Teras Medya\'nın vizyoner bakış açısı sayesinde.', stars: 5 },
   { name: 'Selin Arslan', role: 'Marka Müdürü, Luxury Tekstil', text: 'Tanıtım filminden kurumsal kimliğe kadar her şeyi tek çatı altında hallettik. Süreç tamamen şeffaftı, onay sistemi bize büyük zaman kazandırdı.', stars: 5 },
 ];
 
@@ -369,7 +369,7 @@ const Home = () => {
 
   return (
     <>
-      <SEO title="Ana Sayfa" description="Piklab — Yeni nesil kurumsal medya ve prodüksiyon ajansı. Video prodüksiyon, grafik tasarım, AI entegrasyonları ve daha fazlası." />
+      <SEO title="Ana Sayfa" description="Teras Medya — Yeni nesil kurumsal medya ve prodüksiyon ajansı. Video prodüksiyon, grafik tasarım, reklam çözümleri ve daha fazlası." />
       <Hero settings={settings} />
       <FlowSection />
       <StatsSection />
