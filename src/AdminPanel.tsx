@@ -12,11 +12,7 @@ import {
 
 const AdminPanel = () => {
   const [activeTab, setActiveTab] = useState('dashboard');
-<<<<<<< HEAD
   const [token, setToken] = useState(localStorage.getItem('teras_token'));
-=======
-  const [token, setToken] = useState(localStorage.getItem('piklab_token'));
->>>>>>> ccaff09285d880f1d898f2abf25474c4beb4be66
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
@@ -28,11 +24,7 @@ const AdminPanel = () => {
     // In a real standalone, this would call /api/auth/login
     if (username === 'admin' && password === 'admin123') {
       const t = 'fake-jwt-token';
-<<<<<<< HEAD
       localStorage.setItem('teras_token', t);
-=======
-      localStorage.setItem('piklab_token', t);
->>>>>>> ccaff09285d880f1d898f2abf25474c4beb4be66
       setToken(t);
     } else {
       setError('Hatalı kullanıcı adı veya şifre');
