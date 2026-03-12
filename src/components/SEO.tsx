@@ -7,13 +7,13 @@ interface SEOProps {
   url?: string;
 }
 
-const DEFAULT_DESC = 'Piklab — Yeni nesil kurumsal medya ve prodüksiyon ajansı. Video prodüksiyon, grafik tasarım, sosyal medya yönetimi ve AI entegrasyonları.';
+const DEFAULT_DESC = 'Teras Medya — Yeni nesil kurumsal medya ve prodüksiyon ajansı. Video prodüksiyon, grafik tasarım, sosyal medya yönetimi ve reklam çözümleri.';
 const DEFAULT_IMAGE = 'https://images.unsplash.com/photo-1551288049-bebda4e38f71?auto=format&fit=crop&q=80&w=1200';
 
 export const SEO = ({ title, description = DEFAULT_DESC, image = DEFAULT_IMAGE, url }: SEOProps) => {
   useEffect(() => {
     // Title
-    document.title = `${title} | Piklab`;
+    document.title = `${title} | Teras Medya`;
 
     const setMeta = (name: string, content: string, property = false) => {
       const attr = property ? 'property' : 'name';
@@ -32,14 +32,14 @@ export const SEO = ({ title, description = DEFAULT_DESC, image = DEFAULT_IMAGE, 
 
     // Open Graph
     setMeta('og:type', 'website', true);
-    setMeta('og:title', `${title} | Piklab`, true);
+    setMeta('og:title', `${title} | Teras Medya`, true);
     setMeta('og:description', description, true);
     setMeta('og:image', image, true);
     if (url) setMeta('og:url', url, true);
 
     // Twitter Card
     setMeta('twitter:card', 'summary_large_image');
-    setMeta('twitter:title', `${title} | Piklab`);
+    setMeta('twitter:title', `${title} | Teras Medya`);
     setMeta('twitter:description', description);
     setMeta('twitter:image', image);
 
