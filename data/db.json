@@ -39,21 +39,22 @@
        "password": "$2a$10$6Rz3cI...placeholder...hashed...client123",
        "role": "client",
        "displayName": "Örnek Müşteri",
-       "email": "client@piklab.com"
+       "email": "client@terasmedya.com"
     }
   ],
   "tasks": [],
   "settings": {
-    "heroTitle": "YENİ NESİL REKLAMCILIK AJANSI",
+    "heroTitle": "TERAS MEDYA: YENİ NESİL REKLAMCILIK",
     "heroSubtitle": "EN İYİLER İÇİN EN İYİSİ.",
-    "heroDescription": "Yeni nesil reklamcılık için çıktığımız bu yolda; her gün dünden biraz daha fazla çalışıyor, biraz daha fazla üretiyoruz.",
-    "contactEmail": "info@piklab.com",
-    "contactPhone": "+90 212 000 00 00",
+    "heroDescription": "Reklamcılığın zirvesinde, Teras Medya ile markanızın hikayesini yeniden yazıyoruz. Her gün dünden daha iyisi için üretiyoruz.",
+    "contactEmail": "info@terasmedya.com",
+    "contactPhone": "+90 540 005 25 20",
     "socialLinks": {
-      "instagram": "https://instagram.com/piklab",
-      "facebook": "https://facebook.com/piklab"
+      "instagram": "https://instagram.com/terasmedya",
+      "facebook": "https://facebook.com/terasmedya"
     },
-    "address": "Beşiktaş, İstanbul"
+    "address": "Enntepe Mall, Konya",
+    "satisfactionRate": 98
   },
   "references": [
     { "id": "1", "name": "Tesla", "logo_url": "https://upload.wikimedia.org/wikipedia/commons/e/e8/Tesla_logo.png" },
