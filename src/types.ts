@@ -133,5 +133,8 @@ export interface SiteSettings {
   address: string;
   aboutText?: string;
   visionText?: string;
+<<<<<<< HEAD
   satisfactionRate?: number;
+=======
+>>>>>>> ccaff09285d880f1d898f2abf25474c4beb4be66
 }
