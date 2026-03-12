@@ -360,5 +360,100 @@ export const api = {
   },
   async addCanvasPin(pin: Omit<CanvasPin, 'id' | 'createdAt'>): Promise<CanvasPin> {
     return await fetch(`/api/tasks/${pin.taskId}/pins`, { method: 'POST', headers: getHeaders(), body: JSON.stringify(pin) }).then(handleResponse);
-  }
+  },
+
+  // ─── PRD: Auth ──────────────────────────────────────────────────────
+  async register(name: string, email: string, password: string): Promise<{ token: string; profile: any }> {
+    return await fetch('/api/auth/register', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name, email, password })
+    }).then(handleResponse);
+  },
+
+  async login(email: string, password: string): Promise<{ token: string; profile: any }> {
+    return await fetch('/api/auth/login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, password })
+    }).then(handleResponse);
+  },
+
+  async onboard(userId: string | number, companyDetails: any): Promise<void> {
+    await fetch('/api/auth/onboard', {
+      method: 'POST',
+      headers: getHeaders(),
+      body: JSON.stringify(companyDetails)
+    }).then(handleResponse);
+  },
+
+  // ─── PRD: Projects ──────────────────────────────────────────────────
+  async getProjects(): Promise<any[]> {
+    try { return await fetch('/api/projects', { headers: getHeaders() }).then(handleResponse) || []; } catch { return []; }
+  },
+  async getProject(id: string | number): Promise<any> {
+    return await fetch(`/api/projects/${id}`, { headers: getHeaders() }).then(handleResponse);
+  },
+  async createProject(data: { title: string; service_type?: string; brief?: string; budget?: number; deadline?: string; package_id?: number }): Promise<any> {
+    return await fetch('/api/projects', {
+      method: 'POST',
+      headers: getHeaders(),
+      body: JSON.stringify(data)
+    }).then(handleResponse);
+  },
+  async updateProject(id: string | number, updates: any): Promise<any> {
+    return await fetch(`/api/projects/${id}`, {
+      method: 'PUT',
+      headers: getHeaders(),
+      body: JSON.stringify(updates)
+    }).then(handleResponse);
+  },
+  async deleteProject(id: string | number): Promise<void> {
+    await fetch(`/api/projects/${id}`, { method: 'DELETE', headers: getHeaders() }).then(handleResponse);
+  },
+
+  // ─── PRD: Invoices ──────────────────────────────────────────────────
+  async getInvoices(): Promise<any[]> {
+    try { return await fetch('/api/invoices', { headers: getHeaders() }).then(handleResponse) || []; } catch { return []; }
+  },
+  async createInvoice(data: any): Promise<any> {
+    return await fetch('/api/invoices', {
+      method: 'POST',
+      headers: getHeaders(),
+      body: JSON.stringify(data)
+    }).then(handleResponse);
+  },
+  async updateInvoice(id: string | number, updates: any): Promise<any> {
+    return await fetch(`/api/invoices/${id}`, {
+      method: 'PUT',
+      headers: getHeaders(),
+      body: JSON.stringify(updates)
+    }).then(handleResponse);
+  },
+
+  // ─── PRD: Messages ──────────────────────────────────────────────────
+  async getMessages(projectId?: number | string): Promise<any[]> {
+    const qs = projectId ? `?project_id=${projectId}` : '';
+    try { return await fetch(`/api/messages${qs}`, { headers: getHeaders() }).then(handleResponse) || []; } catch { return []; }
+  },
+  async sendMessage(data: { project_id?: number; content: string; attachment_url?: string }): Promise<any> {
+    return await fetch('/api/messages', {
+      method: 'POST',
+      headers: getHeaders(),
+      body: JSON.stringify(data)
+    }).then(handleResponse);
+  },
+
+  // ─── PRD: Notifications ─────────────────────────────────────────────
+  async getNotifications(): Promise<{ count: number; items: any[] }> {
+    try { return await fetch('/api/notifications', { headers: getHeaders() }).then(handleResponse) || { count: 0, items: [] }; } catch { return { count: 0, items: [] }; }
+  },
+  async markNotificationsRead(): Promise<void> {
+    await fetch('/api/notifications/read', { method: 'PUT', headers: getHeaders() }).then(handleResponse);
+  },
+
+  // ─── PRD: Reports ───────────────────────────────────────────────────
+  async getReports(): Promise<any> {
+    try { return await fetch('/api/reports', { headers: getHeaders() }).then(handleResponse); } catch { return {}; }
+  },
 };
