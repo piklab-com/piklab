@@ -608,9 +608,10 @@ async function startServer() {
   }
 
   const PORT = Number(process.env.PORT) || 4000;
+  const HOST = process.env.NODE_ENV === 'production' ? '0.0.0.0' : '127.0.0.1';
 
-  const server = app.listen(PORT, '127.0.0.1', () => {
-    console.log(`✅ Server running on http://localhost:${PORT}`);
+  const server = app.listen(PORT, HOST, () => {
+    console.log(`✅ Server running on http://${HOST}:${PORT}`);
     
     // Initialize data in background
     initializeFirestoreData().catch(err => {
