@@ -8,7 +8,7 @@ import dotenv from 'dotenv';
 import Stripe from 'stripe';
 import admin from 'firebase-admin';
 import { getFirestore } from 'firebase-admin/firestore';
-import firebaseConfig from './firebase-applet-config.json' assert { type: 'json' };
+import firebaseConfig from './firebase-applet-config.json' with { type: 'json' };
 
 dotenv.config();
 
@@ -363,6 +363,28 @@ async function startServer() {
     res.json(submissions);
   }));
 
+  // Notifications — review-status tasks for a given user
+  app.get('/api/notifications', authenticateToken, asyncHandler(async (req: any, res: any) => {
+    try {
+      const uid = (req.user as any)?.id || req.query.uid;
+      const snapshot = await db.collection('tasks')
+        .where('clientId', '==', uid)
+        .where('status', '==', 'review')
+        .get();
+      res.json({ count: snapshot.size, items: snapshot.docs.map(d => ({ id: d.id, title: d.data().title })) });
+    } catch {
+      res.json({ count: 0, items: [] });
+    }
+  }));
+
+  // User Onboarding
+  app.post('/api/users/:uid/onboard', asyncHandler(async (req: any, res: any) => {
+    const { uid } = req.params;
+    const { companyName, sector, packageInterest } = req.body;
+    await db.collection('users').doc(uid).set({ companyName, sector, packageInterest, onboarded: true }, { merge: true });
+    res.sendStatus(200);
+  }));
+
   // Packages
   app.get('/api/packages', asyncHandler(async (req: any, res: any) => {
     const snapshot = await db.collection('packages').get();
@@ -401,34 +423,69 @@ async function startServer() {
     
     // Services
     const services = [
-      { title: 'Web Development', slug: 'web-dev', description: 'Modern web apps', icon: 'code', content: 'Content...' },
-      { title: 'Mobile Apps', slug: 'mobile-apps', description: 'iOS & Android', icon: 'smartphone', content: 'Content...' }
+      { title: 'Sosyal Medya Yönetimi', slug: 'sosyal-medya-yonetimi', description: 'Markanızın dijital dünyadaki sesini profesyonelce yönetiyoruz.', icon: '📱', features: ['İçerik Stratejisi', 'Aylık Planlama', 'Topluluk Yönetimi', 'Raporlama'] },
+      { title: 'Video Prodüksiyon', slug: 'video-produksiyon', description: 'Etkileyici ve profesyonel reklam filmleri üretiyoruz.', icon: '🎬', features: ['Tanıtım Filmi', 'Sosyal Medya Videoları', 'Kurgu & Montaj', 'Animasyon'] },
+      { title: 'Kurumsal Kimlik', slug: 'kurumsal-kimlik', description: 'Görsel kimliğinizi modern tasarımlarla inşa ediyoruz.', icon: '🎨', features: ['Logo Tasarımı', 'Marka DNA\'sı', 'Katalog Tasarımı', 'Brand Book'] },
+      { title: 'Web & E-Ticaret', slug: 'web-e-ticaret', description: 'Performans odaklı, dönüşüm getiren modern web siteleri.', icon: '💻', features: ['UI/UX Tasarım', 'Özel Yazılım', 'Shopify & WooCommerce', 'Hız Optimizasyonu'] },
+      { title: 'Performans Pazarlama', slug: 'performans-pazarlama', description: 'İzlenebilir, ölçülebilir ve yatırım getirisi yüksek reklamlar.', icon: '📊', features: ['Meta Reklamları', 'Google Ads', 'SEO Optimizasyonu', 'Dönüşüm Takibi'] },
+      { title: 'Fotoğraf Çekimi', slug: 'fotograf-cekimi', description: 'Ürünlerinizi ve markanızı en net şekilde yansıtın.', icon: '📷', features: ['Ürün Çekimi', 'Moda Çekimi', 'Mekan Çekimi', 'Gastronomi'] },
+      { title: 'Seslendirme & Jingle', slug: 'seslendirme-jingle', description: 'Markanıza özel kurumsal ses ve müzik tasarımları.', icon: '🎙️', features: ['Reklam Seslendirmesi', 'Kurumsal Müzik', 'Podcat Prodüksiyon', 'Ses Efektleri'] },
+      { title: 'Lokasyon & FPV Drone', slug: 'lokasyon-fpv-drone', description: 'Havadan eşsiz açılarla mekanlarınızı sergileyin.', icon: '🚁', features: ['FPV Çekimler', 'Klasik Drone Çekimi', '4K Havadan Video', 'Sanal Tur'] }
     ];
     services.forEach(s => batch.set(db.collection('services').doc(s.slug), s));
 
     // Portfolio
     const portfolio = [
-      { title: 'Project 1', category: 'Web', type: 'App', url: 'https://...', thumbnail: 'https://...', description: 'Desc 1' },
-      { title: 'Project 2', category: 'Mobile', type: 'App', url: 'https://...', thumbnail: 'https://...', description: 'Desc 2' }
+      { title: 'LUXURY - Autumn Campaign', category: 'Moda & Tekstil', type: 'video', url: 'https://vimeo.com/123456789', thumbnail: 'https://images.unsplash.com/photo-1490481651871-ab68de25d43d?auto=format&fit=crop&q=80&w=800&h=600', description: 'Yeni sezon için hazırladığımız özel prodüksiyon.' },
+      { title: 'Aesthetic Medical - Marka Kimliği', category: 'Kurumsal', type: 'image', url: 'https://cdn.example.com', thumbnail: 'https://images.unsplash.com/photo-1542744173-8e7e53415bb0?auto=format&fit=crop&q=80&w=800&h=600', description: 'Uluslararası medikal markanın baştan uca kurumsal kimlik tasarımı.' },
+      { title: 'Urban Coffee - Sosyal Medya', category: 'Dijital', type: 'image', url: 'https://instagram.com/urbancoffee', thumbnail: 'https://images.unsplash.com/photo-1497935586351-b67a49e012bf?auto=format&fit=crop&q=80&w=800&h=600', description: '3 aylık sosyal medya ve influencer marketing stratejisi.' },
+      { title: 'The Grand Hotel - FPV Tour', category: 'Prodüksiyon', type: 'video', url: 'https://youtube.com', thumbnail: 'https://images.unsplash.com/photo-1542314831-c6a4d27ce6a2?auto=format&fit=crop&q=80&w=800&h=600', description: 'Otelin prestijli alanlarını öne çıkaran havadan çekim ve sanal tur.' }
     ];
+    // Clear and override (simplistic approach: just add random IDs on top, better is to delete first, but we'll just insert newly. If needed we can clear).
+    // Let's just create them. Actually, portfolio.forEach doesn't specify IDs. We might want to empty first if we were thorough, but this is fine.
+    
+    // Deleting old ones
+    const oldPortfolio = await db.collection('portfolio').get();
+    oldPortfolio.forEach(doc => batch.delete(doc.ref));
     portfolio.forEach(p => batch.set(db.collection('portfolio').doc(), p));
 
     // References
     const refs = [
-      { name: 'Client A', logo_url: 'https://...' },
-      { name: 'Client B', logo_url: 'https://...' }
+      { name: 'Tesla', logo_url: 'https://upload.wikimedia.org/wikipedia/commons/e/e8/Tesla_logo.png', toneOfVoice: 'Innovatif, Teknik', colors: ['#CC0000', '#000000'] },
+      { name: 'Nike', logo_url: 'https://upload.wikimedia.org/wikipedia/commons/a/a6/Logo_NIKE.svg', toneOfVoice: 'Kararlı, Atletik, Motive Edici', colors: ['#000000', '#FFFFFF', '#FF6600'] },
+      { name: 'Netflix', logo_url: 'https://upload.wikimedia.org/wikipedia/commons/0/08/Netflix_2015_logo.svg', toneOfVoice: 'Eğlenceli, Samimi', colors: ['#E50914', '#221F1F'] },
+      { name: 'Spotify', logo_url: 'https://upload.wikimedia.org/wikipedia/commons/2/26/Spotify_logo_with_text.svg', toneOfVoice: 'Genç, Dinamik', colors: ['#1DB954', '#191414'] }
     ];
+    const oldRefs = await db.collection('references_logos').get();
+    oldRefs.forEach(doc => batch.delete(doc.ref));
     refs.forEach(r => batch.set(db.collection('references_logos').doc(), r));
 
     // Packages
     const packages = [
-      { name: 'Basic', price: 100, features: ['Feature 1'] },
-      { name: 'Pro', price: 200, features: ['Feature 1', 'Feature 2'] }
+      { name: 'Başlangıç', price: '₺14.999', period: 'Aylık', features: JSON.stringify(['12 Sosyal Medya Tasarımı', 'Ayda 1 Kurgulu Reels', 'Temel Hedef Kitle Raporu', 'Hesap Kurulumları']), highlighted: false },
+      { name: 'Büyüme (Pro)', price: '₺32.999', period: 'Aylık', features: JSON.stringify(['Sınırsız Grafik Tasarım', 'Haftada 2 Video İçerik (Reels/TikTok)', 'Meta & Google Ads Yönetimi (Reklam bütçesi hariç)', 'Aylık Check-in Toplantısı', 'Marka DNA Analizi']), highlighted: true },
+      { name: 'Full-Stack Ajans', price: '₺75.000', period: 'Aylık', features: JSON.stringify(['Sınırsız Video Prodüksiyon', 'Özel Hesap Yöneticisi & Takım', 'Kapsamlı E-Ticaret Kampanyaları', 'AI Araçlarıyla Ölçeklendirme', 'Her ay 1 Tanıtım Filmi Formatı']), highlighted: false }
     ];
+    const oldPackages = await db.collection('packages').get();
+    oldPackages.forEach(doc => batch.delete(doc.ref));
     packages.forEach(p => batch.set(db.collection('packages').doc(), p));
 
+    // Settings
+    const settings = {
+        heroTitle: "YENİ NESİL REKLAMCILIK AJANSI",
+        heroSubtitle: "EN İYİLER İÇİN EN İYİSİ",
+        heroDescription: "Biz sıradan içerikler üretmeyiz. Markanızın büyüme hedeflerine yönelik vizyoner kampanyalar, üst düzey prodüksiyonlar ve akıllı sistemler kurgularız.",
+        contactEmail: "hello@piklab.com.tr",
+        contactPhone: "+90 850 000 00 00",
+        address: "Levent, İstanbul"
+    };
+    Object.entries(settings).forEach(([key, value]) => {
+      const docRef = db.collection('settings').doc(key);
+      batch.set(docRef, { value: String(value) });
+    });
+
     await batch.commit();
-    res.json({ message: 'Data populated' });
+    res.json({ message: 'Tüm Piklab içerikleri başarıyla veritabanına aktarıldı!' });
   }));
 
   app.post('/api/settings', authenticateToken, asyncHandler(async (req: any, res: any) => {
@@ -524,7 +581,10 @@ async function startServer() {
   // Vite middleware for development
   if (process.env.NODE_ENV !== 'production') {
     const vite = await createViteServer({
-      server: { middlewareMode: true },
+      server: {
+        middlewareMode: true,
+        hmr: false,   // Disable HMR WebSocket to avoid EPERM on macOS w/ Node 25
+      },
       appType: 'spa',
     });
     app.use(vite.middlewares);
@@ -535,14 +595,20 @@ async function startServer() {
     });
   }
 
-  const PORT = Number(process.env.PORT) || 3000;
-  app.listen(PORT, '0.0.0.0', () => {
-    console.log(`Server running on port ${PORT}`);
+  const PORT = Number(process.env.PORT) || 4000;
+
+  const server = app.listen(PORT, '127.0.0.1', () => {
+    console.log(`✅ Server running on http://localhost:${PORT}`);
     
     // Initialize data in background
     initializeFirestoreData().catch(err => {
       console.error('Failed to initialize Firestore data:', err);
     });
+  });
+
+  server.on('error', (err: any) => {
+    console.error('Server error:', err.message);
+    process.exit(1);
   });
 }
 

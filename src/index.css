@@ -4,22 +4,92 @@
 @theme {
   --font-sans: "Space Grotesk", "Inter", ui-sans-serif, system-ui, sans-serif;
   --font-display: "Anton", sans-serif;
-  --color-primary: #f27d26; /* Piktram orange */
+  --color-primary: #f27d26;
   --color-secondary: #141414;
   --color-accent: #f4f4f4;
   --color-brutal-black: #000000;
 }
 
+/* ── Dark Mode Variables ── */
+:root {
+  --bg-base: #f4f4f4;
+  --bg-surface: #ffffff;
+  --text-base: #000000;
+  --text-muted: #6b7280;
+  --border-color: #000000;
+}
+
+[data-theme="dark"] {
+  --bg-base: #0f0f0f;
+  --bg-surface: #1a1a1a;
+  --text-base: #f4f4f4;
+  --text-muted: #9ca3af;
+  --border-color: #f4f4f4;
+}
+
+[data-theme="dark"] body {
+  background-color: var(--bg-base);
+  color: var(--text-base);
+}
+
+[data-theme="dark"] .bg-accent {
+  background-color: var(--bg-surface) !important;
+}
+
+[data-theme="dark"] .bg-white {
+  background-color: #1a1a1a !important;
+}
+
+[data-theme="dark"] .text-brutal-black {
+  color: var(--text-base) !important;
+}
+
+[data-theme="dark"] .text-gray-700,
+[data-theme="dark"] .text-gray-600,
+[data-theme="dark"] .text-gray-500,
+[data-theme="dark"] .text-gray-400 {
+  color: var(--text-muted) !important;
+}
+
+[data-theme="dark"] .border-brutal-black {
+  border-color: #444 !important;
+}
+
+[data-theme="dark"] .shadow-\[8px_8px_0px_0px_rgba\(0\,0\,0\,1\)\] {
+  box-shadow: 8px 8px 0px 0px rgba(255,255,255,0.15) !important;
+}
+
+[data-theme="dark"] .brutal-border {
+  box-shadow: 8px 8px 0px 0px rgba(255,255,255,0.1) !important;
+}
+
+[data-theme="dark"] nav {
+  background-color: rgba(15,15,15,0.95) !important;
+}
+
 @layer base {
   body {
     @apply bg-accent text-secondary font-sans antialiased overflow-x-hidden selection:bg-primary selection:text-white;
+    transition: background-color 0.4s ease, color 0.4s ease;
   }
-  
+
   h1, h2, h3, h4, h5, h6 {
     @apply font-display tracking-wide uppercase;
   }
 }
 
+/* ── Fluid Typography ── */
+.text-fluid-hero {
+  font-size: clamp(2.5rem, 7vw, 9rem);
+  line-height: 0.85;
+}
+
+.text-fluid-title {
+  font-size: clamp(2rem, 5vw, 6rem);
+  line-height: 1;
+}
+
+/* ── Utilities ── */
 .smooth-transition {
   @apply transition-all duration-500 ease-out;
 }
@@ -32,7 +102,7 @@
   @apply py-24 px-6 md:px-12 lg:px-24;
 }
 
-/* Custom Animations */
+/* ── Marquee ── */
 @keyframes marquee {
   0% { transform: translateX(0); }
   100% { transform: translateX(-50%); }
@@ -48,6 +118,7 @@
   animation-play-state: paused;
 }
 
+/* ── Float ── */
 @keyframes float {
   0%, 100% { transform: translateY(0) rotate(0deg); }
   50% { transform: translateY(-20px) rotate(2deg); }
@@ -66,7 +137,27 @@
   animation: float-delayed 7s ease-in-out infinite 1s;
 }
 
-/* Brutalist Elements */
+/* ── Counter Animation ── */
+@keyframes count-up {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.animate-count-up {
+  animation: count-up 0.6s ease-out forwards;
+}
+
+/* ── Lightbox ── */
+@keyframes lightbox-in {
+  from { opacity: 0; transform: scale(0.92); }
+  to { opacity: 1; transform: scale(1); }
+}
+
+.lightbox-content {
+  animation: lightbox-in 0.3s ease-out forwards;
+}
+
+/* ── Brutalist Elements ── */
 .brutal-border {
   @apply border-4 border-brutal-black shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] hover:shadow-[12px_12px_0px_0px_rgba(242,125,38,1)] hover:-translate-y-1 hover:-translate-x-1 transition-all duration-300;
 }
