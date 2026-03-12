@@ -67,16 +67,17 @@ export interface Subscription {
 }
 
 export interface Service {
-  id: number;
+  id: string | number;
   title: string;
   slug: string;
   description: string;
   icon: string;
+  features: string[];
   content: string;
 }
 
 export interface PortfolioItem {
-  id: number;
+  id: string | number;
   title: string;
   category: string;
   type: 'image' | 'video' | 'link';
@@ -86,13 +87,15 @@ export interface PortfolioItem {
 }
 
 export interface Reference {
-  id: number;
+  id: string | number;
   name: string;
   logo_url: string;
+  toneOfVoice?: string;
+  colors?: string[];
 }
 
 export interface ContactSubmission {
-  id: number;
+  id: string | number;
   name: string;
   email: string;
   phone: string;
@@ -103,14 +106,27 @@ export interface ContactSubmission {
 }
 
 export interface Package {
-  id: number;
+  id: string | number;
   name: string;
   price: string;
-  features: string;
+  features: string[];
   period: string;
   stripePriceId?: string;
+  highlighted?: boolean;
 }
 
 export interface SiteSettings {
-  [key: string]: string;
+  heroTitle: string;
+  heroSubtitle: string;
+  heroDescription: string;
+  contactEmail: string;
+  contactPhone: string;
+  socialLinks: {
+    instagram?: string;
+    facebook?: string;
+    twitter?: string;
+    linkedin?: string;
+  };
+  logoUrl?: string;
+  address: string;
 }
