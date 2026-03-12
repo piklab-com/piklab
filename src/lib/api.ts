@@ -1,17 +1,16 @@
-// api.ts - Universal Data Layer for Piklab
-// This file handles data interaction with the backend API.
+export * from '../types';
+import type * as T from '../types';
 
-import { 
-  SiteSettings, 
-  PortfolioItem, 
-  Brand, 
-  Service, 
-  Package, 
-  UserProfile as Client, 
-  Task, 
-  TaskComment, 
-  Reference 
-} from '../types';
+export type SiteSettings = T.SiteSettings;
+export type PortfolioItem = T.PortfolioItem;
+export type Brand = T.Brand;
+export type Service = T.Service;
+export type Package = T.Package;
+export type UserProfile = T.UserProfile;
+export type Client = T.UserProfile;
+export type Task = T.Task;
+export type TaskComment = T.TaskComment;
+export type Reference = T.Reference;
 
 export interface Message {
   id: string;
@@ -263,12 +262,73 @@ export const api = {
     }).then(handleResponse);
   },
 
-  // --- Clients ---
+  // --- Users & Clients ---
+  async getUsers(): Promise<Client[]> {
+    try {
+      return await fetch('/api/users', { headers: getHeaders() }).then(handleResponse) || DEFAULT_CLIENTS;
+    } catch {
+      return DEFAULT_CLIENTS;
+    }
+  },
+  async addUser(userData: any): Promise<Client> {
+    return await fetch('/api/users', {
+      method: 'POST',
+      headers: getHeaders(),
+      body: JSON.stringify(userData)
+    }).then(handleResponse);
+  },
+  async updateUser(uid: string, updates: any): Promise<void> {
+    await fetch(`/api/users/${uid}`, {
+      method: 'PUT',
+      headers: getHeaders(),
+      body: JSON.stringify(updates)
+    }).then(handleResponse);
+  },
+  async deleteUser(uid: string): Promise<void> {
+    await fetch(`/api/users/${uid}`, {
+      method: 'DELETE',
+      headers: getHeaders()
+    }).then(handleResponse);
+  },
+
+  // Backward compatibility/Context usage
   async getClients(): Promise<Client[]> {
-    try { return await fetch('/api/clients', { headers: getHeaders() }).then(handleResponse) || DEFAULT_CLIENTS; } catch { return DEFAULT_CLIENTS; }
+    return this.getUsers();
   },
   async addClient(client: Omit<Client, 'id'>): Promise<Client> {
-    return await fetch('/api/clients', { method: 'POST', headers: getHeaders(), body: JSON.stringify(client) }).then(handleResponse);
+    return this.addUser({ ...client, role: 'client' });
+  },
+
+  // --- Uploads ---
+  async uploadFile(file: File): Promise<{ url: string }> {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.readAsDataURL(file);
+      reader.onload = async () => {
+        try {
+          const res = await fetch('/api/upload', {
+            method: 'POST',
+            headers: getHeaders(),
+            body: JSON.stringify({
+              name: file.name,
+              data: reader.result
+            })
+          }).then(handleResponse);
+          resolve(res);
+        } catch (e) {
+          reject(e);
+        }
+      };
+      reader.onerror = (e) => reject(e);
+    });
+  },
+
+  // --- Backups ---
+  async triggerBackup(): Promise<void> {
+    await fetch('/api/backup', {
+      method: 'POST',
+      headers: getHeaders()
+    }).then(handleResponse);
   },
 
   // --- Tasks ---
