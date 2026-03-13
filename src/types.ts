@@ -15,6 +15,8 @@ export interface UserProfile {
   role: 'admin' | 'client' | 'designer';
   brandId?: string;
   createdAt: string;
+  onboarded?: boolean;
+  company_details?: Record<string, any>;
   socialAccounts?: {
     instagram?: { accessToken: string; username: string };
     facebook?: { accessToken: string; pageName: string };
