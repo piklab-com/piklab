@@ -32,7 +32,18 @@ class LocalDB {
     public function findOne($c, $cb) { $this->load(); foreach (($this->data[$c] ?? []) as $i) if ($cb($i)) return $i; return null; }
     public function add($c, $item) { $this->load(); if (!isset($this->data[$c])) $this->data[$c]=[]; $item['id']=$item['id']??bin2hex(random_bytes(4)); $item['created_at']=date('c'); $this->data[$c][]=$item; $this->save(); return $item; }
     public function update($c, $id, $u) { $this->load(); foreach ($this->data[$c]??[] as $k=>$i) { if (($i['id']??null)==$id||($i['slug']??null)==$id) { $this->data[$c][$k]=array_merge($this->data[$c][$k],$u); $this->save(); return $this->data[$c][$k]; } } return null; }
-    public function delete($c, $id) { $this->load(); $n=count($this->data[$c]??[]); $this->data[$c]=array_values(array_filter($this->data[$c]??[],function($i)use($id){return ($i['id']??null)!=$id&&($i['slug']??null)!=$id;})); $ok=count($this->data[$c])<$n; if($ok)$this->save(); return $ok; }
+    public function delete($c, $id) {
+        $this->load();
+        $n = count($this->data[$c] ?? []);
+        $this->data[$c] = array_values(array_filter($this->data[$c] ?? [], function($i) use ($id) {
+            $matchId   = isset($i['id'])   && (string)$i['id']   === (string)$id;
+            $matchSlug = isset($i['slug']) && (string)$i['slug'] === (string)$id;
+            return !$matchId && !$matchSlug;
+        }));
+        $ok = count($this->data[$c]) < $n;
+        if ($ok) $this->save();
+        return $ok;
+    }
     public function getSettings() { $this->load(); return $this->data['settings']??[]; }
     public function setSettings($s) { $this->load(); $this->data['settings']=array_merge((array)($this->data['settings']??[]),(array)$s); $this->save(); }
 }
