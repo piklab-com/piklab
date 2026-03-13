@@ -2,7 +2,6 @@ import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { Sparkles, ArrowRight, CheckCircle, Star, Users, BarChart3, CreditCard, Quote } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
-import { loginWithGoogle } from '../firebase';
 import { useNavigate } from 'react-router-dom';
 import { useSiteSettings } from '../context/SiteSettingsContext';
 import { api } from '../lib/api';
@@ -342,7 +341,7 @@ const Home = () => {
 
   const handleSubscribe = async (pkg: any) => {
     if (!user) {
-      await loginWithGoogle();
+      navigate('/giris');
       return;
     }
     try {
@@ -360,7 +359,7 @@ const Home = () => {
       if (data.url) {
         window.location.href = data.url;
       } else {
-        alert('Stripe henüz yapılandırılmamış. Lütfen admin ile iletişime geçin.');
+        alert('Ödeme için lütfen bizimle iletişime geçin.');
       }
     } catch {
       alert('Ödeme sistemi şu an kullanılamıyor, lütfen daha sonra tekrar deneyin.');
